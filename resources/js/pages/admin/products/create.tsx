@@ -151,17 +151,17 @@ export default function Create() {
 
                         <div className="grid grid-cols-3 gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="width">Width (inches)</Label>
+                                <Label htmlFor="width">Width (centimeter)</Label>
                                 <Input id="width" type="number" step="0.01" min="0" value={data.width} onChange={(e) => setData('width', e.target.value)} />
                                 <InputError message={errors.width} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="height">Height (inches)</Label>
+                                <Label htmlFor="height">Height (centimeter)</Label>
                                 <Input id="height" type="number" step="0.01" min="0" value={data.height} onChange={(e) => setData('height', e.target.value)} />
                                 <InputError message={errors.height} />
                             </div>
                             <div className="grid gap-2">
-                                <Label htmlFor="depth">Depth (inches)</Label>
+                                <Label htmlFor="depth">Depth (centimeter)</Label>
                                 <Input id="depth" type="number" step="0.01" min="0" value={data.depth} onChange={(e) => setData('depth', e.target.value)} />
                                 <InputError message={errors.depth} />
                             </div>

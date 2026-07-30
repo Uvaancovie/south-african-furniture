@@ -1,0 +1,601 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { supabase } from '../utils/supabase'
+import type { Product, NewProductInput } from '../types/database'
+import { 
+  UploadCloud, 
+  PackagePlus, 
+  Trash2, 
+  CheckCircle2, 
+  AlertCircle, 
+  RefreshCw, 
+  List, 
+  PlusCircle, 
+  Sparkles,
+  Eye,
+  EyeOff
+} from 'lucide-vue-next'
+
+const emit = defineEmits(['logout', 'product-updated'])
+
+const activeTab = ref<'upload' | 'inventory'>('upload')
+const products = ref<Product[]>([])
+const loading = ref(false)
+const uploading = ref(false)
+const seeding = ref(false)
+
+const successMessage = ref('')
+const errorMessage = ref('')
+
+const selectedFiles = ref<File[]>([])
+const imagePreviews = ref<string[]>([])
+
+const form = ref<NewProductInput>({
+  name: '',
+  slug: '',
+  category: 'Living Room',
+  price: 0,
+  sku: '',
+  stock_quantity: 1,
+  material: '',
+  color: '',
+  width: undefined,
+  height: undefined,
+  depth: undefined,
+  description: '',
+  is_active: true,
+  is_featured: false,
+})
+
+const categories = [
+  'Living Room',
+  'Dining Room',
+  'Bedroom',
+  'Office',
+  'Outdoor',
+  'Storage'
+]
+
+function generateSlug() {
+  if (form.value.name) {
+    form.value.slug = form.value.name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+
+    if (!form.value.sku) {
+      const prefix = form.value.category.substring(0, 3).toUpperCase()
+      const rand = Math.floor(1000 + Math.random() * 9000)
+      form.value.sku = `${prefix}-${rand}`
+    }
+  }
+}
+
+function handleFileSelect(event: Event) {
+  const target = event.target as HTMLInputElement
+  if (target.files) {
+    const files = Array.from(target.files)
+    addFiles(files)
+  }
+}
+
+function handleFileDrop(event: DragEvent) {
+  if (event.dataTransfer?.files) {
+    const files = Array.from(event.dataTransfer.files)
+    addFiles(files)
+  }
+}
+
+function addFiles(files: File[]) {
+  const validFiles = files.filter(f => f.type.startsWith('image/'))
+  selectedFiles.value.push(...validFiles)
+
+  validFiles.forEach(file => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        imagePreviews.value.push(e.target.result as string)
+      }
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+function removeImage(index: number) {
+  selectedFiles.value.splice(index, 1)
+  imagePreviews.value.splice(index, 1)
+}
+
+async function fetchInventory() {
+  loading.value = true
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, product_images(*)')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    products.value = data || []
+  } catch (err: any) {
+    console.error('Inventory fetch error:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleProductUpload() {
+  if (!form.value.name || !form.value.price) {
+    errorMessage.value = 'Please provide product name and price.'
+    return
+  }
+
+  uploading.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+    generateSlug()
+
+    // 1. Insert Product
+    const { data: newProduct, error: prodError } = await supabase
+      .from('products')
+      .insert([{
+        name: form.value.name,
+        slug: form.value.slug,
+        category: form.value.category,
+        price: form.value.price,
+        sku: form.value.sku,
+        stock_quantity: form.value.stock_quantity,
+        material: form.value.material || null,
+        color: form.value.color || null,
+        width: form.value.width || null,
+        height: form.value.height || null,
+        depth: form.value.depth || null,
+        description: form.value.description || null,
+        is_active: form.value.is_active,
+        is_featured: form.value.is_featured
+      }])
+      .select()
+      .single()
+
+    if (prodError) throw prodError
+
+    // 2. Upload Images to Storage
+    if (selectedFiles.value.length > 0 && newProduct) {
+      for (let i = 0; i < selectedFiles.value.length; i++) {
+        const file = selectedFiles.value[i]
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${newProduct.id}/${Date.now()}-${i}.${fileExt}`
+
+        const { error: storageError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, file, { cacheControl: '3600', upsert: true })
+
+        if (!storageError) {
+          const { data: publicUrlData } = supabase.storage
+            .from('product-images')
+            .getPublicUrl(fileName)
+
+          await supabase.from('product_images').insert([{
+            product_id: newProduct.id,
+            image_url: publicUrlData.publicUrl,
+            is_primary: i === 0,
+            sort_order: i
+          }])
+        }
+      }
+    }
+
+    successMessage.value = `Product "${form.value.name}" uploaded successfully!`
+
+    form.value = {
+      name: '',
+      slug: '',
+      category: 'Living Room',
+      price: 0,
+      sku: '',
+      stock_quantity: 1,
+      material: '',
+      color: '',
+      width: undefined,
+      height: undefined,
+      depth: undefined,
+      description: '',
+      is_active: true,
+      is_featured: false,
+    }
+    selectedFiles.value = []
+    imagePreviews.value = []
+
+    await fetchInventory()
+    emit('product-updated')
+  } catch (err: any) {
+    console.error('Product upload error:', err)
+    errorMessage.value = err.message || 'Failed to upload product.'
+  } finally {
+    uploading.value = false
+  }
+}
+
+async function toggleActive(product: Product) {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .update({ is_active: !product.is_active })
+      .eq('id', product.id)
+
+    if (error) throw error
+    product.is_active = !product.is_active
+  } catch (err: any) {
+    alert('Error toggling status: ' + err.message)
+  }
+}
+
+async function deleteProduct(productId: string) {
+  if (!confirm('Are you sure you want to delete this product?')) return
+
+  try {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', productId)
+
+    if (error) throw error
+    products.value = products.value.filter(p => p.id !== productId)
+    successMessage.value = 'Product deleted successfully.'
+  } catch (err: any) {
+    alert('Error deleting product: ' + err.message)
+  }
+}
+
+async function seedSampleData() {
+  if (!confirm('Seed database with 6 luxury South African furniture sample items?')) return
+
+  seeding.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  const samples = [
+    {
+      name: 'Kariega Teak Dining Table',
+      slug: 'kariega-teak-dining-table',
+      category: 'Dining Room',
+      price: 18450.00,
+      stock_quantity: 5,
+      material: 'Solid South African Teak',
+      color: 'Warm Amber',
+      width: 220, height: 76, depth: 100,
+      is_active: true, is_featured: true,
+      description: 'Handcrafted solid teak dining table featuring natural organic grain lines.'
+    },
+    {
+      name: 'Drakensberg Leather Sofa',
+      slug: 'drakensberg-leather-sofa',
+      category: 'Living Room',
+      price: 24900.00,
+      stock_quantity: 3,
+      material: 'Full-Grain Aniline Leather',
+      color: 'Cognac Brown',
+      width: 240, height: 85, depth: 95,
+      is_active: true, is_featured: true,
+      description: 'Luxurious 3-seater sofa wrapped in premium South African full-grain leather.'
+    }
+  ]
+
+  try {
+    for (const item of samples) {
+      const { data: newProd, error } = await supabase.from('products').insert([item]).select().single()
+      if (!error && newProd) {
+        await supabase.from('product_images').insert([{
+          product_id: newProd.id,
+          image_url: 'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=1200&q=80',
+          is_primary: true
+        }])
+      }
+    }
+    successMessage.value = 'Database seeded with sample items!'
+    await fetchInventory()
+  } catch (err: any) {
+    errorMessage.value = 'Seeding error: ' + err.message
+  } finally {
+    seeding.value = false
+  }
+}
+
+onMounted(() => {
+  fetchInventory()
+})
+</script>
+
+<template>
+  <div class="space-y-6">
+    <!-- Top Action Bar -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="flex items-center space-x-2">
+        <button
+          @click="activeTab = 'upload'"
+          :class="[
+            'px-4 py-2 text-sm font-bold rounded-xl transition-all flex items-center space-x-2 cursor-pointer',
+            activeTab === 'upload' ? 'bg-blue-700 text-white shadow-md shadow-blue-700/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          ]"
+        >
+          <PlusCircle class="w-4 h-4" />
+          <span>Upload Product</span>
+        </button>
+
+        <button
+          @click="activeTab = 'inventory'; fetchInventory()"
+          :class="[
+            'px-4 py-2 text-sm font-bold rounded-xl transition-all flex items-center space-x-2 cursor-pointer',
+            activeTab === 'inventory' ? 'bg-blue-700 text-white shadow-md shadow-blue-700/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+          ]"
+        >
+          <List class="w-4 h-4" />
+          <span>Manage Inventory ({{ products.length }})</span>
+        </button>
+      </div>
+
+      <button
+        @click="seedSampleData"
+        :disabled="seeding"
+        class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer self-end sm:self-auto"
+      >
+        <Sparkles class="w-3.5 h-3.5" />
+        <span>{{ seeding ? 'Seeding...' : 'Seed Sample Data' }}</span>
+      </button>
+    </div>
+
+    <!-- Alert Notices -->
+    <div v-if="successMessage" class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-800 flex items-center justify-between font-semibold">
+      <div class="flex items-center space-x-2">
+        <CheckCircle2 class="w-5 h-5 text-emerald-600 shrink-0" />
+        <span>{{ successMessage }}</span>
+      </div>
+      <button @click="successMessage = ''" class="text-xs text-emerald-600 hover:underline">Dismiss</button>
+    </div>
+
+    <div v-if="errorMessage" class="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-sm text-rose-800 flex items-center justify-between font-semibold">
+      <div class="flex items-center space-x-2">
+        <AlertCircle class="w-5 h-5 text-rose-600 shrink-0" />
+        <span>{{ errorMessage }}</span>
+      </div>
+      <button @click="errorMessage = ''" class="text-xs text-rose-600 hover:underline">Dismiss</button>
+    </div>
+
+    <!-- UPLOAD FORM -->
+    <div v-if="activeTab === 'upload'" class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-xl space-y-6">
+      <div class="border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
+          <PackagePlus class="w-5 h-5 text-blue-700" />
+          <span>Upload New Furniture Item</span>
+        </h2>
+        <p class="text-xs text-slate-500 mt-1">
+          Fill in details and attach images to publish directly to your live store catalog.
+        </p>
+      </div>
+
+      <form @submit.prevent="handleProductUpload" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 block">Product Title *</label>
+            <input
+              v-model="form.name"
+              @input="generateSlug"
+              type="text"
+              required
+              placeholder="e.g. Kariega Teak Dining Table"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 block">Category *</label>
+            <select
+              v-model="form.category"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+            >
+              <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+            </select>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 block">Price (ZAR R) *</label>
+            <input
+              v-model.number="form.price"
+              type="number"
+              step="0.01"
+              required
+              placeholder="18450.00"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 block">SKU Code</label>
+            <input
+              v-model="form.sku"
+              type="text"
+              placeholder="TBL-TEAK-001"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 block">Stock Quantity</label>
+            <input
+              v-model.number="form.stock_quantity"
+              type="number"
+              min="0"
+              placeholder="5"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-slate-700 block">Primary Material</label>
+            <input
+              v-model="form.material"
+              type="text"
+              placeholder="e.g. Solid South African Teak"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Dimensions -->
+        <div class="bg-blue-50/60 p-4 rounded-2xl border border-blue-100 space-y-3">
+          <label class="text-xs font-bold text-blue-900 block uppercase tracking-wider">Dimensions (Centimeters cm)</label>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <span class="text-xs text-slate-500 block mb-1">Width (cm)</span>
+              <input v-model.number="form.width" type="number" step="0.1" placeholder="220" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm" />
+            </div>
+            <div>
+              <span class="text-xs text-slate-500 block mb-1">Height (cm)</span>
+              <input v-model.number="form.height" type="number" step="0.1" placeholder="76" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm" />
+            </div>
+            <div>
+              <span class="text-xs text-slate-500 block mb-1">Depth (cm)</span>
+              <input v-model.number="form.depth" type="number" step="0.1" placeholder="100" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-bold text-slate-700 block">Product Description</label>
+          <textarea
+            v-model="form.description"
+            rows="3"
+            placeholder="Description of craftsmanship and materials..."
+            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+          ></textarea>
+        </div>
+
+        <!-- Image Uploader -->
+        <div class="space-y-3">
+          <label class="text-xs font-bold text-slate-700 block">Product Photos (Supabase Storage)</label>
+          <div 
+            @dragover.prevent
+            @drop.prevent="handleFileDrop"
+            class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-8 text-center bg-slate-50 transition-colors cursor-pointer relative"
+          >
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              @change="handleFileSelect"
+              class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            />
+            <UploadCloud class="w-10 h-10 text-blue-600 mx-auto mb-2" />
+            <p class="text-sm text-slate-800 font-semibold">Drag & drop product images here, or click to browse</p>
+            <p class="text-xs text-slate-500 mt-1">Supports PNG, JPG, WEBP</p>
+          </div>
+
+          <div v-if="imagePreviews.length > 0" class="grid grid-cols-4 sm:grid-cols-6 gap-3 pt-2">
+            <div v-for="(src, idx) in imagePreviews" :key="idx" class="relative group rounded-xl overflow-hidden border border-slate-200 h-20 bg-slate-100">
+              <img :src="src" class="w-full h-full object-cover" />
+              <button 
+                type="button" 
+                @click="removeImage(idx)" 
+                class="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Trash2 class="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Checkboxes -->
+        <div class="flex items-center space-x-6 pt-2">
+          <label class="flex items-center space-x-2 text-sm text-slate-700 font-semibold cursor-pointer">
+            <input v-model="form.is_active" type="checkbox" class="w-4 h-4 accent-blue-600 rounded" />
+            <span>Publish Immediately (Active)</span>
+          </label>
+
+          <label class="flex items-center space-x-2 text-sm text-slate-700 font-semibold cursor-pointer">
+            <input v-model="form.is_featured" type="checkbox" class="w-4 h-4 accent-blue-600 rounded" />
+            <span>Mark as Featured Item</span>
+          </label>
+        </div>
+
+        <!-- Submit -->
+        <div class="pt-4 border-t border-slate-100 flex justify-end">
+          <button
+            type="submit"
+            :disabled="uploading"
+            class="px-6 py-3.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-blue-700/20 disabled:opacity-50 cursor-pointer flex items-center space-x-2"
+          >
+            <UploadCloud class="w-4 h-4" />
+            <span>{{ uploading ? 'Uploading Product...' : 'Publish Product to Catalog' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- INVENTORY TABLE -->
+    <div v-else class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900">Live Inventory Items</h3>
+        <button @click="fetchInventory" class="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100">
+          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-700">
+          <thead class="bg-slate-50 text-xs uppercase text-slate-500 font-bold border-b border-slate-200">
+            <tr>
+              <th class="p-4">Product</th>
+              <th class="p-4">Category</th>
+              <th class="p-4">Price</th>
+              <th class="p-4">Stock</th>
+              <th class="p-4">Status</th>
+              <th class="p-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr v-if="products.length === 0">
+              <td colspan="6" class="p-8 text-center text-slate-400">No products uploaded yet.</td>
+            </tr>
+            <tr v-for="product in products" :key="product.id" class="hover:bg-slate-50 transition-colors">
+              <td class="p-4 font-bold text-slate-900 flex items-center space-x-3">
+                <img 
+                  :src="product.product_images?.[0]?.image_url || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=100&q=80'" 
+                  class="w-10 h-10 object-cover rounded-lg border border-slate-200"
+                />
+                <div>
+                  <span class="block">{{ product.name }}</span>
+                  <span class="text-xs text-slate-400 font-mono">{{ product.sku }}</span>
+                </div>
+              </td>
+              <td class="p-4 text-xs font-semibold text-blue-700">{{ product.category }}</td>
+              <td class="p-4 font-extrabold text-slate-900">R {{ product.price.toFixed(2) }}</td>
+              <td class="p-4">
+                <span :class="product.stock_quantity > 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'">
+                  {{ product.stock_quantity }}
+                </span>
+              </td>
+              <td class="p-4">
+                <button @click="toggleActive(product)" class="flex items-center space-x-1 text-xs font-semibold cursor-pointer">
+                  <Eye v-if="product.is_active" class="w-4 h-4 text-emerald-600" />
+                  <EyeOff v-else class="w-4 h-4 text-slate-400" />
+                  <span :class="product.is_active ? 'text-emerald-600' : 'text-slate-400'">
+                    {{ product.is_active ? 'Active' : 'Draft' }}
+                  </span>
+                </button>
+              </td>
+              <td class="p-4 text-right">
+                <button @click="deleteProduct(product.id)" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-lg">
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>

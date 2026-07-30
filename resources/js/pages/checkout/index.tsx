@@ -89,7 +89,8 @@ export default function CheckoutIndex({ items, total, count, user, provinces, de
     const [selectedProvince, setSelectedProvince] = useState('');
     const [deliveryZoneId, setDeliveryZoneId] = useState('');
     const [touched, setTouched] = useState<Set<string>>(new Set());
-
+    const [marketingConsent, setMarketingConsent] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false);
     const filteredZones = useMemo(() => {
         if (!selectedProvince) return [];
         const group = provinces.find((p) => p.name === selectedProvince);
@@ -127,6 +128,8 @@ export default function CheckoutIndex({ items, total, count, user, provinces, de
                 data[key] = value;
             }
         });
+        data.marketing_consent = marketingConsent;
+        data.terms_accepted = termsAccepted;
         data.shipping_same = shippingSame;
 
         router.post('/checkout', data as any, {
@@ -331,6 +334,44 @@ export default function CheckoutIndex({ items, total, count, user, provinces, de
                                     placeholder="Special instructions, delivery notes, etc."
                                 />
                             </div>
+
+                            <div className="rounded-xl border bg-card p-6 space-y-4">
+                                <div className="flex items-start gap-3">
+                                    <Checkbox
+                                        id="marketing_consent"
+                                        checked={marketingConsent}
+                                        onCheckedChange={(v) => setMarketingConsent(v === true)}
+                                        className="mt-0.5"
+                                    />
+                                    <Label htmlFor="marketing_consent" className="text-sm leading-relaxed">
+                                        I'd like to receive emails about new products and promotions.
+                                    </Label>
+                                </div>
+
+                                <Separator />
+
+                                <div className="flex items-start gap-3">
+                                    <Checkbox
+                                        id="terms_accepted"
+                                        checked={termsAccepted}
+                                        onCheckedChange={(v) => setTermsAccepted(v === true)}
+                                        className="mt-0.5"
+                                    />
+                                    <Label htmlFor="terms_accepted" className="text-sm leading-relaxed">
+                                        I accept the{' '}
+                                        <a href="/terms" target="_blank" className="text-amber-600 underline hover:text-amber-700">
+                                            Terms & Conditions
+                                        </a>{' '}
+                                        and{' '}
+                                        <a href="/privacy" target="_blank" className="text-amber-600 underline hover:text-amber-700">
+                                            Privacy Policy
+                                        </a>.
+                                    </Label>
+                                </div>
+                                {errors.terms_accepted && (
+                                    <p className="text-xs text-destructive">{errors.terms_accepted}</p>
+                                )}
+                            </div>
                         </div>
 
                         <div>
@@ -375,7 +416,7 @@ export default function CheckoutIndex({ items, total, count, user, provinces, de
                                     <span>Total</span>
                                     <span>{formatPrice(grandTotal)}</span>
                                 </div>
-                                <Button type="submit" className="mt-6 w-full gap-2" disabled={submitting || !selectedZone}>
+                                <Button type="submit" className="mt-6 w-full gap-2" disabled={submitting || !selectedZone || !termsAccepted}>
                                     <ShoppingBag className="size-4" />
                                     {submitting ? 'Placing Order...' : 'Place Order'}
                                 </Button>
