@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { supabase } from '../utils/supabase'
-import { Lock, Mail, KeyRound, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-vue-next'
+import { Lock, Mail, KeyRound, AlertCircle, CheckCircle2, ArrowRight, Eye, EyeOff } from 'lucide-vue-next'
 
 const emit = defineEmits(['authenticated'])
 
@@ -11,6 +11,7 @@ const password = ref('')
 const loading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+const showPassword = ref(false)
 
 async function handleSubmit() {
   if (!email.value || !password.value) {
@@ -106,11 +107,20 @@ async function handleSubmit() {
           <KeyRound class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             v-model="password"
-            type="password"
+            :type="showPassword ? 'text' : 'password'"
             required
             placeholder="••••••••••••"
-            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 transition-all"
+            class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 transition-all"
           />
+          <button
+            type="button"
+            @click="showPassword = !showPassword"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
+            :title="showPassword ? 'Hide password' : 'Show password'"
+          >
+            <Eye v-if="!showPassword" class="w-4 h-4" />
+            <EyeOff v-else class="w-4 h-4" />
+          </button>
         </div>
       </div>
 
