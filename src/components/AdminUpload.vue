@@ -290,7 +290,7 @@ async function seedSampleData() {
       if (!error && newProd) {
         await supabase.from('product_images').insert([{
           product_id: newProd.id,
-          image_url: 'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=1200&q=80',
+          image_url: '/images/teak_table.png',
           is_primary: true
         }])
       }
@@ -372,7 +372,7 @@ onMounted(() => {
           <span>Upload New Furniture Item</span>
         </h2>
         <p class="text-xs text-slate-500 mt-1">
-          Fill in details and attach images to publish directly to your live store catalog.
+          Fill in details and attach images to publish directly to your live SAFS Furniture store.
         </p>
       </div>
 
@@ -563,7 +563,7 @@ onMounted(() => {
             <tr v-for="product in products" :key="product.id" class="hover:bg-slate-50 transition-colors">
               <td class="p-4 font-bold text-slate-900 flex items-center space-x-3">
                 <img 
-                  :src="product.product_images?.[0]?.image_url || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=100&q=80'" 
+                  :src="product.product_images?.[0]?.image_url || '/images/teak_table.png'" 
                   class="w-10 h-10 object-cover rounded-lg border border-slate-200"
                 />
                 <div>

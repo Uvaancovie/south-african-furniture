@@ -39,9 +39,9 @@ export interface NewProductInput {
   category: string;
   material?: string;
   color?: string;
-  width?: number;
-  height?: number;
-  depth?: number;
+  width?: number | null;
+  height?: number | null;
+  depth?: number | null;
   is_active: boolean;
   is_featured: boolean;
 }

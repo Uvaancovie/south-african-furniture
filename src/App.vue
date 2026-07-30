@@ -2,14 +2,15 @@
 import { ref, onMounted, computed } from 'vue'
 import { supabase } from './utils/supabase'
 import type { Product, CartItem } from './types/database'
+import LandingPage from './components/LandingPage.vue'
 import Catalog from './components/Catalog.vue'
 import ProductDetail from './components/ProductDetail.vue'
 import AdminLogin from './components/AdminLogin.vue'
 import AdminUpload from './components/AdminUpload.vue'
 import CartDrawer from './components/CartDrawer.vue'
-import { Store, ShieldCheck, LogOut, ShoppingBag, Building2, CheckCircle2 } from 'lucide-vue-next'
+import { Store, ShieldCheck, LogOut, ShoppingBag, Building2, CheckCircle2, Home } from 'lucide-vue-next'
 
-const currentView = ref<'catalog' | 'detail' | 'admin'>('catalog')
+const currentView = ref<'landing' | 'catalog' | 'detail' | 'admin'>('landing')
 const selectedProduct = ref<Product | null>(null)
 const allProducts = ref<Product[]>([])
 
@@ -24,6 +25,22 @@ const toastMessage = ref('')
 const totalCartCount = computed(() => {
   return cartItems.value.reduce((acc, item) => acc + item.quantity, 0)
 })
+
+async function fetchAllProducts() {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, product_images(*)')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+
+    if (!error && data && data.length > 0) {
+      allProducts.value = data
+    }
+  } catch (err) {
+    console.error('Error fetching inventory for App:', err)
+  }
+}
 
 async function checkAuthSession() {
   loadingAuth.value = true
@@ -45,7 +62,7 @@ function handleAuthenticated(user: any) {
 async function handleLogout() {
   await supabase.auth.signOut()
   userSession.value = null
-  currentView.value = 'catalog'
+  currentView.value = 'landing'
 }
 
 function handleSelectProduct(product: Product) {
@@ -100,6 +117,7 @@ function showToast(msg: string) {
 }
 
 onMounted(() => {
+  fetchAllProducts()
   checkAuthSession()
   supabase.auth.onAuthStateChange((_event, session) => {
     userSession.value = session?.user || null
@@ -116,7 +134,7 @@ onMounted(() => {
         
         <!-- Logo -->
         <div 
-          @click="currentView = 'catalog'"
+          @click="currentView = 'landing'"
           class="flex items-center space-x-3 cursor-pointer group"
         >
           <div class="w-10 h-10 bg-blue-700 group-hover:bg-blue-800 rounded-2xl flex items-center justify-center shadow-md shadow-blue-700/20 transition-all">
@@ -135,6 +153,19 @@ onMounted(() => {
         <!-- Center View Switcher -->
         <nav class="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
           <button
+            @click="currentView = 'landing'"
+            :class="[
+              'px-4 py-2 text-sm font-bold rounded-xl transition-all flex items-center space-x-2 cursor-pointer',
+              currentView === 'landing'
+                ? 'bg-blue-700 text-white shadow-md shadow-blue-700/20' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
+            ]"
+          >
+            <Home class="w-4 h-4" />
+            <span>Home</span>
+          </button>
+
+          <button
             @click="currentView = 'catalog'"
             :class="[
               'px-4 py-2 text-sm font-bold rounded-xl transition-all flex items-center space-x-2 cursor-pointer',
@@ -144,7 +175,7 @@ onMounted(() => {
             ]"
           >
             <Store class="w-4 h-4" />
-            <span>Storefront</span>
+            <span>Storefront Catalog</span>
           </button>
 
           <button
@@ -219,9 +250,19 @@ onMounted(() => {
     <!-- Main View Routing -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
       
+      <!-- View 0: Landing Page -->
+      <LandingPage
+        v-if="currentView === 'landing'"
+        :products="allProducts"
+        @explore-catalog="currentView = 'catalog'"
+        @select-product="handleSelectProduct"
+        @quick-add-to-cart="handleQuickAddToCart"
+        @products-updated="fetchAllProducts"
+      />
+
       <!-- View 1: Main Catalog -->
       <Catalog 
-        v-if="currentView === 'catalog'" 
+        v-else-if="currentView === 'catalog'" 
         @select-product="handleSelectProduct"
         @quick-add-to-cart="handleQuickAddToCart"
       />
@@ -241,6 +282,7 @@ onMounted(() => {
         <AdminUpload 
           v-if="userSession" 
           @logout="handleLogout" 
+          @product-updated="fetchAllProducts"
         />
         <AdminLogin 
           v-else 
@@ -256,7 +298,7 @@ onMounted(() => {
           SAFS Furniture — Handcrafted South African Hardwood Collection
         </p>
         <p class="text-slate-400">
-          Powered by Vue 3, Supabase PostgreSQL & Storage, hosted on Vercel Edge Serverless.
+          Designed with Vue 3, Supabase PostgreSQL & Storage, hosted on Vercel Edge Serverless.
         </p>
       </div>
     </footer>
