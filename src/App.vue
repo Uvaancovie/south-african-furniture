@@ -8,7 +8,7 @@ import ProductDetail from './components/ProductDetail.vue'
 import AdminLogin from './components/AdminLogin.vue'
 import AdminUpload from './components/AdminUpload.vue'
 import CartDrawer from './components/CartDrawer.vue'
-import { Store, ShieldCheck, LogOut, ShoppingBag, Building2, CheckCircle2, Home } from 'lucide-vue-next'
+import { Store, ShieldCheck, LogOut, ShoppingBag, Building2, CheckCircle2, Home, Menu, X } from 'lucide-vue-next'
 
 const currentView = ref<'landing' | 'catalog' | 'detail' | 'admin'>('landing')
 const selectedProduct = ref<Product | null>(null)
@@ -25,6 +25,13 @@ const toastMessage = ref('')
 const totalCartCount = computed(() => {
   return cartItems.value.reduce((acc, item) => acc + item.quantity, 0)
 })
+
+const mobileMenuOpen = ref(false)
+
+function navigateTo(view: 'landing' | 'catalog' | 'detail' | 'admin') {
+  currentView.value = view
+  mobileMenuOpen.value = false
+}
 
 async function fetchAllProducts() {
   try {
@@ -130,97 +137,161 @@ onMounted(() => {
     
     <!-- Top Navigation Bar -->
     <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
         
         <!-- Logo -->
         <div 
-          @click="currentView = 'landing'"
-          class="flex items-center space-x-3 cursor-pointer group"
+          @click="navigateTo('landing')"
+          class="flex items-center space-x-2 sm:space-x-3 cursor-pointer group shrink-0"
         >
-          <div class="w-10 h-10 bg-blue-700 group-hover:bg-blue-800 rounded-2xl flex items-center justify-center shadow-md shadow-blue-700/20 transition-all">
-            <Building2 class="w-6 h-6 text-white" />
+          <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-700 group-hover:bg-blue-800 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md shadow-blue-700/20 transition-all">
+            <Building2 class="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
-            <span class="text-xl font-black text-slate-900 tracking-tight block group-hover:text-blue-700 transition-colors">
+            <span class="text-base sm:text-xl font-black text-slate-900 tracking-tight block group-hover:text-blue-700 transition-colors leading-tight">
               SAFS <span class="text-blue-700">FURNITURE</span>
             </span>
-            <span class="text-[10px] text-blue-700 tracking-widest uppercase block -mt-1 font-bold">
+            <span class="hidden sm:block text-[10px] text-blue-700 tracking-widest uppercase -mt-1 font-bold leading-tight">
               South African Hardwoods
             </span>
           </div>
         </div>
 
-        <!-- Center View Switcher -->
-        <nav class="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        <!-- Desktop Nav (hidden on mobile) -->
+        <nav class="hidden sm:flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button
             @click="currentView = 'landing'"
             :class="[
-              'px-4 py-2 text-sm font-bold rounded-xl transition-all flex items-center space-x-2 cursor-pointer',
+              'px-3 lg:px-4 py-2 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap',
               currentView === 'landing'
                 ? 'bg-blue-700 text-white shadow-md shadow-blue-700/20' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
             ]"
           >
             <Home class="w-4 h-4" />
-            <span>Home</span>
+            <span class="hidden lg:inline">Home</span>
           </button>
-
           <button
             @click="currentView = 'catalog'"
             :class="[
-              'px-4 py-2 text-sm font-bold rounded-xl transition-all flex items-center space-x-2 cursor-pointer',
+              'px-3 lg:px-4 py-2 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap',
               currentView === 'catalog' || currentView === 'detail'
                 ? 'bg-blue-700 text-white shadow-md shadow-blue-700/20' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
             ]"
           >
             <Store class="w-4 h-4" />
-            <span>Storefront Catalog</span>
+            <span>Catalog</span>
           </button>
-
           <button
             @click="currentView = 'admin'"
             :class="[
-              'px-4 py-2 text-sm font-bold rounded-xl transition-all flex items-center space-x-2 cursor-pointer',
+              'px-3 lg:px-4 py-2 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap',
               currentView === 'admin' 
                 ? 'bg-blue-700 text-white shadow-md shadow-blue-700/20' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
             ]"
           >
             <ShieldCheck class="w-4 h-4" />
-            <span>Admin Portal</span>
+            <span class="hidden lg:inline">Admin</span>
+            <span class="lg:hidden">Admin</span>
           </button>
         </nav>
 
-        <!-- Right Cart Trigger & Auth Indicator -->
-        <div class="flex items-center space-x-3">
+        <!-- Right Actions -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
           <!-- Shopping Cart Drawer Button -->
           <button
             @click="isCartOpen = true"
-            class="relative p-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl transition-all cursor-pointer border border-blue-200 shadow-xs flex items-center space-x-2"
+            class="relative p-2 sm:p-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg sm:rounded-xl transition-all cursor-pointer border border-blue-200 shadow-xs flex items-center space-x-1.5"
           >
-            <ShoppingBag class="w-5 h-5" />
+            <ShoppingBag class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="hidden sm:inline text-xs font-extrabold uppercase">Cart</span>
             <span 
               v-if="totalCartCount > 0"
-              class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-700 text-white text-[11px] font-black rounded-full flex items-center justify-center shadow-md animate-bounce"
+              class="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 bg-blue-700 text-white text-[10px] sm:text-[11px] font-black rounded-full flex items-center justify-center shadow-md animate-bounce"
             >
               {{ totalCartCount }}
             </span>
           </button>
 
-          <!-- Admin Session Badge -->
+          <!-- Admin Session Badge (desktop) -->
           <template v-if="userSession">
             <div class="hidden md:flex items-center space-x-2">
+              <span class="hidden lg:inline px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-xs text-emerald-800 font-bold">
+                Admin Active
+              </span>
+              <button
+                @click="handleLogout"
+                class="p-1.5 sm:p-2 text-slate-400 hover:text-rose-600 rounded-lg sm:rounded-xl hover:bg-slate-100 transition-colors"
+                title="Sign Out Admin"
+              >
+                <LogOut class="w-4 h-4 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+          </template>
+
+          <!-- Mobile Hamburger -->
+          <button
+            @click="mobileMenuOpen = !mobileMenuOpen"
+            class="sm:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+            :title="mobileMenuOpen ? 'Close menu' : 'Open menu'"
+          >
+            <Menu v-if="!mobileMenuOpen" class="w-5 h-5" />
+            <X v-else class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Dropdown Menu -->
+      <div
+        v-if="mobileMenuOpen"
+        class="sm:hidden border-t border-slate-200 bg-white/95 backdrop-blur-md shadow-lg"
+      >
+        <div class="px-4 py-3 space-y-1">
+          <button
+            @click="navigateTo('landing')"
+            :class="[
+              'w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer',
+              currentView === 'landing' ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-100'
+            ]"
+          >
+            <Home class="w-5 h-5" />
+            <span>Home</span>
+          </button>
+          <button
+            @click="navigateTo('catalog')"
+            :class="[
+              'w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer',
+              currentView === 'catalog' || currentView === 'detail' ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-100'
+            ]"
+          >
+            <Store class="w-5 h-5" />
+            <span>Catalog</span>
+          </button>
+          <button
+            @click="navigateTo('admin')"
+            :class="[
+              'w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer',
+              currentView === 'admin' ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-100'
+            ]"
+          >
+            <ShieldCheck class="w-5 h-5" />
+            <span>Admin Portal</span>
+          </button>
+
+          <!-- Mobile Admin badge -->
+          <template v-if="userSession">
+            <div class="border-t border-slate-100 pt-3 mt-2 flex items-center justify-between">
               <span class="px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-xs text-emerald-800 font-bold">
                 Admin Active
               </span>
               <button
                 @click="handleLogout"
-                class="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-slate-100 transition-colors"
-                title="Sign Out Admin"
+                class="flex items-center space-x-2 px-4 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-sm font-bold transition-all cursor-pointer"
               >
                 <LogOut class="w-4 h-4" />
+                <span>Sign Out</span>
               </button>
             </div>
           </template>
