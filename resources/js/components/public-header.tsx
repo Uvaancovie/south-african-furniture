@@ -3,7 +3,7 @@ import { home, login, register, dashboard } from '@/routes';
 import { index as catalogIndex } from '@/routes/catalog';
 import { index as cartIndex } from '@/routes/cart';
 import { ShoppingBag, ShoppingCart, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn, toUrl } from '@/lib/utils';
 
@@ -32,6 +32,20 @@ export function PublicHeader() {
     const { auth, cart_count } = usePage<{ auth: { user: any }; cart_count: number }>().props;
     const cartCount = cart_count ?? 0;
     const [mobileOpen, setMobileOpen] = useState(false);
+
+    // Prevent body scrolling when the mobile menu is open
+    useEffect(() => {
+        if (mobileOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        
+        // Cleanup function to ensure scrolling is restored if the component unmounts
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [mobileOpen]);
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-neutral-950/95 dark:supports-[backdrop-filter]:bg-neutral-950/60">
@@ -79,33 +93,47 @@ export function PublicHeader() {
                     {mobileOpen ? <X className="size-5" /> : (
                         <span className="relative inline-flex">
                             <Menu className="size-5" />
+                            {/* Optional: Add a tiny indicator to the hamburger menu itself if cart has items */}
+                            {cartCount > 0 && (
+                                <span className="absolute -right-1 -top-1 flex size-2.5 rounded-full bg-amber-600" />
+                            )}
                         </span>
                     )}
                 </button>
             </div>
 
             {mobileOpen && (
-                <div className="border-t md:hidden">
-                    <nav className="flex flex-col gap-3 px-4 py-4">
+                <div className="absolute left-0 top-16 w-full h-[calc(100vh-4rem)] overflow-y-auto border-t bg-white dark:bg-neutral-950 md:hidden">
+                    <nav className="flex flex-col gap-4 px-4 py-6">
                         <NavLink href={home()} onClick={() => setMobileOpen(false)}>Home</NavLink>
                         <NavLink href={catalogIndex()} onClick={() => setMobileOpen(false)}>Catalog</NavLink>
                         <NavLink href={cartIndex()} onClick={() => setMobileOpen(false)}>
-                            Cart {cartCount > 0 && `(${cartCount})`}
+                            <span className="flex items-center gap-2">
+                                Cart
+                                {cartCount > 0 && (
+                                    <span className="flex size-5 animate-in fade-in zoom-in items-center justify-center rounded-full bg-amber-600 text-[10px] font-bold text-white">
+                                        {cartCount > 9 ? '9+' : cartCount}
+                                    </span>
+                                )}
+                            </span>
                         </NavLink>
-                        {auth.user ? (
-                            <Link href={dashboard()} onClick={() => setMobileOpen(false)}>
-                                <Button size="sm" className="w-full">Dashboard</Button>
-                            </Link>
-                        ) : (
-                            <div className="flex flex-col gap-2">
-                                <Link href={login()} onClick={() => setMobileOpen(false)}>
-                                    <Button variant="outline" size="sm" className="w-full">Log in</Button>
+                        
+                        <div className="mt-2 border-t pt-4 dark:border-neutral-800">
+                            {auth.user ? (
+                                <Link href={dashboard()} onClick={() => setMobileOpen(false)}>
+                                    <Button size="sm" className="w-full">Dashboard</Button>
                                 </Link>
-                                <Link href={register()} onClick={() => setMobileOpen(false)}>
-                                    <Button size="sm" className="w-full">Register</Button>
-                                </Link>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="flex flex-col gap-3">
+                                    <Link href={login()} onClick={() => setMobileOpen(false)}>
+                                        <Button variant="outline" size="sm" className="w-full">Log in</Button>
+                                    </Link>
+                                    <Link href={register()} onClick={() => setMobileOpen(false)}>
+                                        <Button size="sm" className="w-full">Register</Button>
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
                     </nav>
                 </div>
             )}
