@@ -130,31 +130,42 @@ function useCatalogFilters(filters: Filters) {
 }
 
 const FilterDropdown = memo(function FilterDropdown({
-    id, label, count, openDropdown, setOpenDropdown, children,
+    id, label, count, openDropdown, setOpenDropdown, children, orientation = 'horizontal',
 }: {
     id: string; label: string; count: number;
     openDropdown: string | null; setOpenDropdown: (v: string | null) => void;
     children: React.ReactNode;
+    orientation?: 'horizontal' | 'vertical';
 }) {
+    const isVertical = orientation === 'vertical';
+
     return (
-        <div className="relative">
+        <div className={isVertical ? 'w-full' : 'relative'}>
             <button
                 type="button"
                 onClick={() => setOpenDropdown(openDropdown === id ? null : id)}
                 className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                    isVertical ? 'w-full justify-between' : ''
+                } ${
                     openDropdown === id
                         ? 'border-amber-600 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
                         : 'border-input bg-background hover:bg-accent'
                 }`}
             >
-                {label}
-                {count > 0 && (
-                    <Badge variant="secondary" className="px-1 text-xs">{count}</Badge>
-                )}
+                <div className="flex items-center gap-1.5">
+                    {label}
+                    {count > 0 && (
+                        <Badge variant="secondary" className="px-1 text-xs">{count}</Badge>
+                    )}
+                </div>
                 <ChevronDown className={`size-3.5 transition-transform ${openDropdown === id ? 'rotate-180' : ''}`} />
             </button>
             {openDropdown === id && (
-                <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-lg border bg-card p-3 shadow-lg">
+                <div className={
+                    isVertical
+                        ? 'mt-2 w-full rounded-lg border bg-card p-3 shadow-sm'
+                        : 'absolute left-0 top-full z-50 mt-1 w-56 rounded-lg border bg-card p-3 shadow-lg'
+                }>
                     {children}
                 </div>
             )}
@@ -271,6 +282,7 @@ const FilterBar = memo(function FilterBar({
     hasActiveFilters,
     categories, materials, colors,
     openDropdown, setOpenDropdown, dropdownRef,
+    orientation = 'horizontal'
 }: {
     search: string; onSearchChange: (v: string) => void; onClearSearch: () => void;
     selectedCategories: string[]; selectedMaterials: string[]; selectedColors: string[];
@@ -281,6 +293,7 @@ const FilterBar = memo(function FilterBar({
     categories: Category[]; materials: string[]; colors: string[];
     openDropdown: string | null; setOpenDropdown: (v: string | null) => void;
     dropdownRef: React.RefObject<HTMLDivElement | null>;
+    orientation?: 'horizontal' | 'vertical';
 }) {
     function handleSearchSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -289,9 +302,11 @@ const FilterBar = memo(function FilterBar({
         router.get(catalogIndex().url, params, { preserveState: true, preserveScroll: true });
     }
 
+    const isVertical = orientation === 'vertical';
+
     return (
-        <div ref={dropdownRef} className="flex flex-wrap items-center gap-3">
-            <form onSubmit={handleSearchSubmit} className="relative min-w-[200px] flex-1 lg:flex-none">
+        <div ref={dropdownRef} className={`flex gap-3 ${isVertical ? 'flex-col items-stretch' : 'flex-wrap items-center'}`}>
+            <form onSubmit={handleSearchSubmit} className={`relative ${isVertical ? 'w-full' : 'min-w-[200px] flex-1 lg:flex-none'}`}>
                 <Search className="text-muted-foreground pointer-events-none absolute left-2.5 top-2.5 size-4" />
                 <Input
                     value={search}
@@ -310,13 +325,13 @@ const FilterBar = memo(function FilterBar({
                 )}
             </form>
 
-            <FilterDropdown id="categories" label="Category" count={selectedCategories.length} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}>
+            <FilterDropdown id="categories" label="Category" count={selectedCategories.length} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} orientation={orientation}>
                 <div className="max-h-60 overflow-y-auto space-y-0.5">
                     {renderCategoryTree(categories, selectedCategories, onToggleCategory)}
                 </div>
             </FilterDropdown>
 
-            <FilterDropdown id="materials" label="Material" count={selectedMaterials.length} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}>
+            <FilterDropdown id="materials" label="Material" count={selectedMaterials.length} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} orientation={orientation}>
                 <div className="space-y-0.5">
                     {materials.map(material => (
                         <label key={material} className="flex cursor-pointer items-center gap-2 py-1.5 text-sm">
@@ -330,7 +345,7 @@ const FilterBar = memo(function FilterBar({
                 </div>
             </FilterDropdown>
 
-            <FilterDropdown id="colors" label="Color" count={selectedColors.length} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}>
+            <FilterDropdown id="colors" label="Color" count={selectedColors.length} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} orientation={orientation}>
                 <div className="space-y-0.5">
                     {colors.map(color => (
                         <label key={color} className="flex cursor-pointer items-center gap-2 py-1.5 text-sm">
@@ -344,7 +359,7 @@ const FilterBar = memo(function FilterBar({
                 </div>
             </FilterDropdown>
 
-            <FilterDropdown id="price" label="Price" count={(priceMin || priceMax) ? 1 : 0} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}>
+            <FilterDropdown id="price" label="Price" count={(priceMin || priceMax) ? 1 : 0} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} orientation={orientation}>
                 <div className="space-y-2">
                     <div className="flex items-center gap-2">
                         <Input
@@ -370,7 +385,7 @@ const FilterBar = memo(function FilterBar({
             </FilterDropdown>
 
             <Select value={sort} onValueChange={onSortChange}>
-                <SelectTrigger className="h-9 w-[130px] text-sm">
+                <SelectTrigger className={`h-9 text-sm ${isVertical ? 'w-full' : 'w-[130px]'}`}>
                     <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -382,7 +397,7 @@ const FilterBar = memo(function FilterBar({
             </Select>
 
             {hasActiveFilters && (
-                <Button variant="ghost" size="sm" onClick={onClearFilters} className="gap-1 text-muted-foreground">
+                <Button variant="ghost" size="sm" onClick={onClearFilters} className={`gap-1 text-muted-foreground ${isVertical ? 'w-full justify-center' : ''}`}>
                     <X className="size-3.5" />
                     Clear
                 </Button>
@@ -604,6 +619,7 @@ export default function CatalogIndex({ products, categories, materials, colors, 
                                     hasActiveFilters={hasActiveFilters()}
                                     categories={categories} materials={materials} colors={colors}
                                     openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} dropdownRef={dropdownRef}
+                                    orientation="vertical"
                                 />
                             </div>
                         </SheetContent>
@@ -674,6 +690,7 @@ export default function CatalogIndex({ products, categories, materials, colors, 
                         hasActiveFilters={hasActiveFilters()}
                         categories={categories} materials={materials} colors={colors}
                         openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} dropdownRef={dropdownRef}
+                        orientation="horizontal"
                     />
                 </div>
 
