@@ -136,7 +136,9 @@ onMounted(() => {
   <div class="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
     
     <!-- Top Navigation Bar -->
-    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <header
+      v-if="currentView !== 'landing'"
+      class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
         
         <!-- Logo -->
@@ -144,14 +146,14 @@ onMounted(() => {
           @click="navigateTo('landing')"
           class="flex items-center space-x-2 sm:space-x-3 cursor-pointer group shrink-0"
         >
-          <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-700 group-hover:bg-blue-800 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md shadow-blue-700/20 transition-all">
+          <div class="w-8 h-8 sm:w-10 sm:h-10 bg-stone-700 group-hover:bg-stone-800 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-md shadow-stone-700/20 transition-all">
             <Building2 class="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
-            <span class="text-base sm:text-xl font-black text-slate-900 tracking-tight block group-hover:text-blue-700 transition-colors leading-tight">
-              SAFS <span class="text-blue-700">FURNITURE</span>
+            <span class="text-base sm:text-xl font-black text-slate-900 tracking-tight block group-hover:text-stone-700 transition-colors leading-tight">
+              SAFS <span class="text-stone-700">FURNITURE</span>
             </span>
-            <span class="hidden sm:block text-[10px] text-blue-700 tracking-widest uppercase -mt-1 font-bold leading-tight">
+            <span class="hidden sm:block text-[10px] text-stone-700 tracking-widest uppercase -mt-1 font-bold leading-tight">
               South African Hardwoods
             </span>
           </div>
@@ -161,12 +163,7 @@ onMounted(() => {
         <nav class="hidden sm:flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button
             @click="currentView = 'landing'"
-            :class="[
-              'px-3 lg:px-4 py-2 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap',
-              currentView === 'landing'
-                ? 'bg-blue-700 text-white shadow-md shadow-blue-700/20' 
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
-            ]"
+            class="px-3 lg:px-4 py-2 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-200"
           >
             <Home class="w-4 h-4" />
             <span class="hidden lg:inline">Home</span>
@@ -176,7 +173,7 @@ onMounted(() => {
             :class="[
               'px-3 lg:px-4 py-2 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap',
               currentView === 'catalog' || currentView === 'detail'
-                ? 'bg-blue-700 text-white shadow-md shadow-blue-700/20' 
+                ? 'bg-stone-700 text-white shadow-md shadow-stone-700/20' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
             ]"
           >
@@ -188,7 +185,7 @@ onMounted(() => {
             :class="[
               'px-3 lg:px-4 py-2 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap',
               currentView === 'admin' 
-                ? 'bg-blue-700 text-white shadow-md shadow-blue-700/20' 
+                ? 'bg-stone-700 text-white shadow-md shadow-stone-700/20' 
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
             ]"
           >
@@ -203,13 +200,13 @@ onMounted(() => {
           <!-- Shopping Cart Drawer Button -->
           <button
             @click="isCartOpen = true"
-            class="relative p-2 sm:p-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg sm:rounded-xl transition-all cursor-pointer border border-blue-200 shadow-xs flex items-center space-x-1.5"
+            class="relative p-2 sm:p-2.5 bg-stone-50 hover:bg-stone-100 text-stone-700 rounded-lg sm:rounded-xl transition-all cursor-pointer border border-stone-200 shadow-xs flex items-center space-x-1.5"
           >
             <ShoppingBag class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="hidden sm:inline text-xs font-extrabold uppercase">Cart</span>
             <span 
               v-if="totalCartCount > 0"
-              class="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 bg-blue-700 text-white text-[10px] sm:text-[11px] font-black rounded-full flex items-center justify-center shadow-md animate-bounce"
+              class="absolute -top-1.5 -right-1.5 w-4 h-4 sm:w-5 sm:h-5 bg-stone-700 text-white text-[10px] sm:text-[11px] font-black rounded-full flex items-center justify-center shadow-md animate-bounce"
             >
               {{ totalCartCount }}
             </span>
@@ -251,10 +248,7 @@ onMounted(() => {
         <div class="px-4 py-3 space-y-1">
           <button
             @click="navigateTo('landing')"
-            :class="[
-              'w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer',
-              currentView === 'landing' ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-100'
-            ]"
+            class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer text-slate-700 hover:bg-slate-100"
           >
             <Home class="w-5 h-5" />
             <span>Home</span>
@@ -263,7 +257,7 @@ onMounted(() => {
             @click="navigateTo('catalog')"
             :class="[
               'w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer',
-              currentView === 'catalog' || currentView === 'detail' ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-100'
+              currentView === 'catalog' || currentView === 'detail' ? 'bg-stone-700 text-white' : 'text-slate-700 hover:bg-slate-100'
             ]"
           >
             <Store class="w-5 h-5" />
@@ -273,7 +267,7 @@ onMounted(() => {
             @click="navigateTo('admin')"
             :class="[
               'w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer',
-              currentView === 'admin' ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-100'
+              currentView === 'admin' ? 'bg-stone-700 text-white' : 'text-slate-700 hover:bg-slate-100'
             ]"
           >
             <ShieldCheck class="w-5 h-5" />
@@ -319,21 +313,29 @@ onMounted(() => {
     />
 
     <!-- Main View Routing -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      
-      <!-- View 0: Landing Page -->
-      <LandingPage
-        v-if="currentView === 'landing'"
-        :products="allProducts"
-        @explore-catalog="currentView = 'catalog'"
-        @select-product="handleSelectProduct"
-        @quick-add-to-cart="handleQuickAddToCart"
-        @products-updated="fetchAllProducts"
-      />
+    <main class="flex-1 w-full mx-auto">
 
+      <!-- View 0: Landing Page (full-bleed, owns its own header/hero) -->
+      <div
+        v-if="currentView === 'landing'"
+        class="w-full"
+      >
+        <LandingPage
+          :products="allProducts"
+          @explore-catalog="currentView = 'catalog'"
+          @select-product="handleSelectProduct"
+          @quick-add-to-cart="handleQuickAddToCart"
+          @products-updated="fetchAllProducts"
+          @open-cart="isCartOpen = true"
+          @navigate-admin="currentView = 'admin'"
+        />
+      </div>
+
+      <!-- Nested View Container -->
+      <div v-else class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- View 1: Main Catalog -->
       <Catalog 
-        v-else-if="currentView === 'catalog'" 
+        v-if="currentView === 'catalog'" 
         @select-product="handleSelectProduct"
         @quick-add-to-cart="handleQuickAddToCart"
       />
@@ -360,6 +362,7 @@ onMounted(() => {
           @authenticated="handleAuthenticated" 
         />
       </template>
+      </div>
     </main>
 
     <!-- Royal White Footer -->

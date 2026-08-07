@@ -45,9 +45,9 @@ function formatPrice(val: number) {
         <!-- Drawer Header -->
         <div class="p-6 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div class="flex items-center space-x-2">
-            <ShoppingBag class="w-5 h-5 text-blue-700" />
+            <ShoppingBag class="w-5 h-5 text-stone-700" />
             <h2 class="text-lg font-extrabold text-slate-900">SAFS Furniture Cart</h2>
-            <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
+            <span class="px-2 py-0.5 bg-stone-100 text-stone-800 text-xs font-bold rounded-full">
               {{ cartItems.length }}
             </span>
           </div>
@@ -81,7 +81,7 @@ function formatPrice(val: number) {
                 {{ item.product.material }}
               </p>
               <div class="flex items-center justify-between mt-2">
-                <span class="font-extrabold text-blue-700 text-sm">
+                <span class="font-extrabold text-stone-700 text-sm">
                   {{ formatPrice(item.product.price * item.quantity) }}
                 </span>
 
@@ -122,13 +122,13 @@ function formatPrice(val: number) {
             </div>
             <div class="flex justify-between pt-2 border-t border-slate-200 text-sm font-extrabold text-slate-900">
               <span>Total Incl. VAT</span>
-              <span class="text-blue-700 text-base">{{ formatPrice(grandTotal) }}</span>
+              <span class="text-stone-700 text-base">{{ formatPrice(grandTotal) }}</span>
             </div>
           </div>
 
           <button
             @click="emit('checkout')"
-            class="w-full py-3.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-blue-700/20 cursor-pointer flex items-center justify-center space-x-2"
+            class="w-full py-3.5 bg-stone-700 hover:bg-stone-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-stone-700/20 cursor-pointer flex items-center justify-center space-x-2"
           >
             <span>Proceed to Secure Checkout</span>
             <ArrowRight class="w-4 h-4" />

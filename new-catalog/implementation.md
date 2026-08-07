@@ -6,7 +6,8 @@ import {
   Search, 
   Box, 
   X, 
-  ShoppingBag
+  ShoppingBag,
+  ArrowRight
 } from 'lucide-vue-next'
 
 const emit = defineEmits(['select-product', 'quick-add-to-cart'])
@@ -137,57 +138,6 @@ const sampleProducts: Product[] = [
     sku: 'CHR-BOU-006',
     product_images: [
       { id: 'img-6', product_id: 'sample-6', image_url: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?auto=format&fit=crop&w=1200&q=80', is_primary: true }
-    ]
-  },
-  {
-    id: 'sample-7',
-    name: 'Drakensberg Leather Sofa (3-Seater)',
-    slug: 'drakensberg-leather-sofa',
-    category: 'Living Room',
-    price: 24900.00,
-    stock_quantity: 3,
-    material: 'Full-Grain Aniline Leather & Steel',
-    color: 'Cognac Brown',
-    width: 240, height: 85, depth: 95,
-    is_active: true, is_featured: true,
-    description: 'Luxurious 3-seater sofa wrapped in premium South African full-grain leather that ages beautifully.',
-    sku: 'SOFA-DRK-007',
-    product_images: [
-      { id: 'img-7', product_id: 'sample-7', image_url: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1200&q=80', is_primary: true }
-    ]
-  },
-  {
-    id: 'sample-8',
-    name: 'Stellenbosch Executive Desk',
-    slug: 'stellenbosch-executive-desk',
-    category: 'Office',
-    price: 16800.00,
-    stock_quantity: 4,
-    material: 'Walnut Wood & Powder-Coated Steel',
-    color: 'Dark Walnut',
-    width: 160, height: 75, depth: 70,
-    is_active: true, is_featured: false,
-    description: 'Sophisticated executive desk with integrated wireless phone charging pad and cable management.',
-    sku: 'DSK-WAL-008',
-    product_images: [
-      { id: 'img-8', product_id: 'sample-8', image_url: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?auto=format&fit=crop&w=1200&q=80', is_primary: true }
-    ]
-  },
-  {
-    id: 'sample-9',
-    name: 'Clifton Rattan Queen Bed Frame',
-    slug: 'clifton-rattan-queen-bed-frame',
-    category: 'Bedroom',
-    price: 19500.00,
-    stock_quantity: 2,
-    material: 'Solid Oak & Natural Cane Rattan',
-    color: 'Light Oak',
-    width: 168, height: 120, depth: 215,
-    is_active: true, is_featured: true,
-    description: 'Organic minimalist bed frame featuring a hand-woven rattan headboard framed in solid European oak.',
-    sku: 'BED-RAT-009',
-    product_images: [
-      { id: 'img-9', product_id: 'sample-9', image_url: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80', is_primary: true }
     ]
   }
 ]

@@ -449,7 +449,7 @@ onMounted(() => {
           @click="activeTab = 'upload'"
           :class="[
             'px-4 py-2 text-sm font-bold rounded-xl transition-all flex items-center space-x-2 cursor-pointer',
-            activeTab === 'upload' ? 'bg-blue-700 text-white shadow-md shadow-blue-700/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            activeTab === 'upload' ? 'bg-stone-700 text-white shadow-md shadow-stone-700/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
           ]"
         >
           <PlusCircle class="w-4 h-4" />
@@ -460,7 +460,7 @@ onMounted(() => {
           @click="activeTab = 'inventory'; fetchInventory()"
           :class="[
             'px-4 py-2 text-sm font-bold rounded-xl transition-all flex items-center space-x-2 cursor-pointer',
-            activeTab === 'inventory' ? 'bg-blue-700 text-white shadow-md shadow-blue-700/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            activeTab === 'inventory' ? 'bg-stone-700 text-white shadow-md shadow-stone-700/30' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
           ]"
         >
           <List class="w-4 h-4" />
@@ -471,7 +471,7 @@ onMounted(() => {
       <button
         @click="seedSampleData"
         :disabled="seeding"
-        class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer self-end sm:self-auto"
+        class="px-3.5 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer self-end sm:self-auto"
       >
         <Sparkles class="w-3.5 h-3.5" />
         <span>{{ seeding ? 'Seeding...' : 'Seed Sample Data' }}</span>
@@ -500,8 +500,8 @@ onMounted(() => {
       <div class="border-b border-slate-100 pb-4 flex items-start justify-between">
         <div>
           <h2 class="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-            <PackagePlus v-if="!editingProductId" class="w-5 h-5 text-blue-700" />
-            <Pencil v-else class="w-5 h-5 text-blue-700" />
+            <PackagePlus v-if="!editingProductId" class="w-5 h-5 text-stone-700" />
+            <Pencil v-else class="w-5 h-5 text-stone-700" />
             <span>{{ editingProductId ? 'Edit Furniture Item' : 'Upload New Furniture Item' }}</span>
           </h2>
           <p class="text-xs text-slate-500 mt-1">
@@ -528,7 +528,7 @@ onMounted(() => {
               type="text"
               required
               placeholder="e.g. Kariega Teak Dining Table"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-stone-600 focus:outline-none"
             />
           </div>
 
@@ -536,7 +536,7 @@ onMounted(() => {
             <label class="text-xs font-bold text-slate-700 block">Category *</label>
             <select
               v-model="form.category"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-stone-600 focus:outline-none"
             >
               <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
             </select>
@@ -550,7 +550,7 @@ onMounted(() => {
               step="0.01"
               required
               placeholder="18450.00"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-stone-600 focus:outline-none"
             />
           </div>
 
@@ -560,7 +560,7 @@ onMounted(() => {
               v-model="form.sku"
               type="text"
               placeholder="TBL-TEAK-001"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-stone-600 focus:outline-none"
             />
           </div>
 
@@ -571,7 +571,7 @@ onMounted(() => {
               type="number"
               min="0"
               placeholder="5"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-stone-600 focus:outline-none"
             />
           </div>
 
@@ -581,14 +581,14 @@ onMounted(() => {
               v-model="form.material"
               type="text"
               placeholder="e.g. Solid South African Teak"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-stone-600 focus:outline-none"
             />
           </div>
         </div>
 
         <!-- Dimensions -->
-        <div class="bg-blue-50/60 p-4 rounded-2xl border border-blue-100 space-y-3">
-          <label class="text-xs font-bold text-blue-900 block uppercase tracking-wider">Dimensions (Centimeters cm)</label>
+        <div class="bg-stone-50/60 p-4 rounded-2xl border border-stone-100 space-y-3">
+          <label class="text-xs font-bold text-stone-900 block uppercase tracking-wider">Dimensions (Centimeters cm)</label>
           <div class="grid grid-cols-3 gap-4">
             <div>
               <span class="text-xs text-slate-500 block mb-1">Width (cm)</span>
@@ -612,7 +612,7 @@ onMounted(() => {
             v-model="form.description"
             rows="3"
             placeholder="Description of craftsmanship and materials..."
-            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-blue-600 focus:outline-none"
+            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:border-stone-600 focus:outline-none"
           ></textarea>
         </div>
 
@@ -622,7 +622,7 @@ onMounted(() => {
           <div 
             @dragover.prevent
             @drop.prevent="handleFileDrop"
-            class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-8 text-center bg-slate-50 transition-colors cursor-pointer relative"
+            class="border-2 border-dashed border-slate-300 hover:border-stone-500 rounded-2xl p-8 text-center bg-slate-50 transition-colors cursor-pointer relative"
           >
             <input
               type="file"
@@ -631,7 +631,7 @@ onMounted(() => {
               @change="handleFileSelect"
               class="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
             />
-            <UploadCloud class="w-10 h-10 text-blue-600 mx-auto mb-2" />
+            <UploadCloud class="w-10 h-10 text-stone-600 mx-auto mb-2" />
             <p class="text-sm text-slate-800 font-semibold">Drag & drop product images here, or click to browse</p>
             <p class="text-xs text-slate-500 mt-1">Supports PNG, JPG, WEBP</p>
           </div>
@@ -674,12 +674,12 @@ onMounted(() => {
         <!-- Checkboxes -->
         <div class="flex items-center space-x-6 pt-2">
           <label class="flex items-center space-x-2 text-sm text-slate-700 font-semibold cursor-pointer">
-            <input v-model="form.is_active" type="checkbox" class="w-4 h-4 accent-blue-600 rounded" />
+            <input v-model="form.is_active" type="checkbox" class="w-4 h-4 accent-stone-600 rounded" />
             <span>Publish Immediately (Active)</span>
           </label>
 
           <label class="flex items-center space-x-2 text-sm text-slate-700 font-semibold cursor-pointer">
-            <input v-model="form.is_featured" type="checkbox" class="w-4 h-4 accent-blue-600 rounded" />
+            <input v-model="form.is_featured" type="checkbox" class="w-4 h-4 accent-stone-600 rounded" />
             <span>Mark as Featured Item</span>
           </label>
         </div>
@@ -689,7 +689,7 @@ onMounted(() => {
           <button
             type="submit"
             :disabled="uploading"
-            class="px-6 py-3.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-blue-700/20 disabled:opacity-50 cursor-pointer flex items-center space-x-2"
+            class="px-6 py-3.5 bg-stone-700 hover:bg-stone-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-stone-700/20 disabled:opacity-50 cursor-pointer flex items-center space-x-2"
           >
             <UploadCloud class="w-4 h-4" />
             <span>{{ uploading ? 'Saving...' : editingProductId ? 'Update Product' : 'Publish Product to Catalog' }}</span>
@@ -734,7 +734,7 @@ onMounted(() => {
                   <span class="text-xs text-slate-400 font-mono">{{ product.sku }}</span>
                 </div>
               </td>
-              <td class="p-4 text-xs font-semibold text-blue-700">{{ product.category }}</td>
+              <td class="p-4 text-xs font-semibold text-stone-700">{{ product.category }}</td>
               <td class="p-4 font-extrabold text-slate-900">R {{ product.price.toFixed(2) }}</td>
               <td class="p-4">
                 <span :class="product.stock_quantity > 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'">
@@ -752,7 +752,7 @@ onMounted(() => {
               </td>
               <td class="p-4 text-right">
                 <div class="flex items-center justify-end space-x-1">
-                  <button @click="handleEditProduct(product)" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="Edit">
+                  <button @click="handleEditProduct(product)" class="p-2 text-slate-400 hover:text-stone-600 hover:bg-stone-50 rounded-lg" title="Edit">
                     <Pencil class="w-4 h-4" />
                   </button>
                   <button @click="deleteProduct(product.id)" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg" title="Delete">

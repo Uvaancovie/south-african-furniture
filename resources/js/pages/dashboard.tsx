@@ -108,7 +108,7 @@ export default function Dashboard({ stats, recentProducts, categoryBreakdown, re
             value: stats.total_orders,
             icon: ShoppingCart,
             href: adminOrdersIndex().url,
-            color: 'bg-blue-500',
+            color: 'bg-stone-600',
             detail: `${stats.pending_orders} pending review`,
         },
         {
@@ -196,7 +196,7 @@ export default function Dashboard({ stats, recentProducts, categoryBreakdown, re
                                 <p className="text-xs font-medium text-muted-foreground">Category coverage</p>
                                 <div className="mt-1 flex items-end justify-between gap-3">
                                     <span className="text-2xl font-bold tabular-nums">{categoryCoverage}%</span>
-                                    <CheckCircle2 className="size-5 text-blue-600" />
+                                    <CheckCircle2 className="size-5 text-stone-600" />
                                 </div>
                             </div>
                         </div>
@@ -376,7 +376,7 @@ export default function Dashboard({ stats, recentProducts, categoryBreakdown, re
                                         href={`${adminOrdersIndex().url}/${order.id}`}
                                         className="flex items-center gap-3 p-3 transition-colors hover:bg-muted/50"
                                     >
-                                        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-700 dark:bg-stone-900/30 dark:text-stone-400">
                                             <ShoppingCart className="size-5" />
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -445,7 +445,7 @@ export default function Dashboard({ stats, recentProducts, categoryBreakdown, re
                                     <span className="font-medium tabular-nums">{activeProductRate}%</span>
                                 </div>
                                 <div className="h-2 rounded-full bg-muted">
-                                    <div className="h-2 rounded-full bg-blue-500" style={{ width: `${activeProductRate}%` }} />
+                                    <div className="h-2 rounded-full bg-stone-600" style={{ width: `${activeProductRate}%` }} />
                                 </div>
                             </div>
 

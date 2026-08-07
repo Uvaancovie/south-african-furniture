@@ -2,47 +2,55 @@
 
 @theme {
   --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --color-royal-blue: #1d4ed8;
-  --color-royal-dark: #1e3a8a;
-  --color-royal-light: #3b82f6;
-  --color-royal-ice: #eff6ff;
+  --color-royal-blue: #78716c;
+  --color-royal-dark: #44403c;
+  --color-royal-light: #a8a29e;
+  --color-royal-ice: #f5f5f4;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #ffffff;
+  color: #1c1917;
 }
 
-/* Custom Royal Blue Scrollbars */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Custom Stone-Grey Scrollbars */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f5f5f4;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d6d3d1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2563eb;
+  background: #a8a29e;
 }
 
-/* Glassmorphism for Royal White UI */
+/* Glassmorphism for Warm White UI */
 .royal-glass {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(219, 234, 254, 0.8);
+  border: 1px solid rgba(214, 211, 209, 0.8);
 }
 
 .royal-gradient-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #fafaf9 100%);
 }
 
 .royal-header-gradient {
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #1c1917 0%, #44403c 50%, #57534e 100%);
 }
 
 /* Animation utilities */

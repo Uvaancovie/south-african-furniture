@@ -2,35 +2,33 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../utils/supabase'
 import type { Product } from '../types/database'
-import {
-  ArrowRight,
-  ShieldCheck,
-  Truck,
-  Award,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
+import { 
+  Sparkles, 
+  ArrowRight, 
+  ShieldCheck, 
+  Truck, 
+  Award, 
+  CheckCircle2, 
+  ChevronDown, 
+  ChevronUp, 
   ShoppingBag,
   Hammer,
   Search,
   MapPin,
   User,
-  Heart,
-  Menu,
-  X,
+  Heart
 } from 'lucide-vue-next'
 
 const props = defineProps<{
   products?: Product[];
 }>()
 
-const emit = defineEmits(['explore-catalog', 'select-product', 'quick-add-to-cart', 'products-updated', 'open-cart', 'navigate-admin'])
+const emit = defineEmits(['explore-catalog', 'select-product', 'quick-add-to-cart', 'products-updated'])
 
 const liveProducts = ref<Product[]>([])
 const loading = ref(false)
 const activeFaq = ref<number | null>(0)
 const searchQuery = ref('')
-const mobileNavOpen = ref(false)
 
 const navCategories = [
   'Inspiration',
@@ -40,7 +38,7 @@ const navCategories = [
   'Rugs',
   'Decor',
   'Guide',
-  'Offers',
+  'Offers'
 ]
 
 // Fallback real items if database has no records yet
@@ -176,10 +174,10 @@ onMounted(() => {
 
 <template>
   <div class="space-y-16 pb-16 bg-stone-50/50">
-
+    
     <!-- 1. HERO & TOP HEADER SECTION -->
     <header class="w-full bg-white shadow-xs border-b border-stone-200">
-
+      
       <!-- Top Announcement Bar -->
       <div class="bg-[#f2ebd9] text-stone-800 text-xs py-2 px-4 md:px-8 font-medium">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
@@ -194,14 +192,14 @@ onMounted(() => {
 
       <!-- Main Navigation Header -->
       <div class="max-w-7xl mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-
+        
         <!-- Search Box (Left) -->
         <div class="w-full md:w-80 flex items-center">
           <div class="relative w-full flex items-center border border-stone-900 rounded-none overflow-hidden">
-            <input
+            <input 
               v-model="searchQuery"
-              type="text"
-              placeholder=""
+              type="text" 
+              placeholder="" 
               class="w-full px-3 py-1.5 text-sm bg-transparent focus:outline-none"
             />
             <button class="bg-black text-white p-2 flex items-center justify-center hover:bg-stone-800 transition-colors">
@@ -224,7 +222,7 @@ onMounted(() => {
             <span>Find A Store</span>
           </button>
 
-          <button @click="emit('navigate-admin')" class="flex flex-col items-center space-y-1 hover:text-black transition-colors">
+          <button class="flex flex-col items-center space-y-1 hover:text-black transition-colors">
             <User class="w-4 h-4 stroke-[1.5]" />
             <span>Sign In</span>
           </button>
@@ -239,7 +237,7 @@ onMounted(() => {
             <span>Wishlist</span>
           </button>
 
-          <button @click="emit('open-cart')" class="flex flex-col items-center space-y-1 hover:text-black transition-colors relative">
+          <button @click="emit('explore-catalog')" class="flex flex-col items-center space-y-1 hover:text-black transition-colors relative">
             <ShoppingBag class="w-4 h-4 stroke-[1.5]" />
             <span>Cart</span>
           </button>
@@ -248,59 +246,24 @@ onMounted(() => {
 
       <!-- Black Sub-Navigation Bar -->
       <nav class="bg-black text-white text-xs md:text-sm font-semibold tracking-wide">
-        <div class="max-w-7xl mx-auto px-4 md:px-8 py-3">
-          <!-- Desktop links -->
-          <div class="hidden md:flex items-center justify-between overflow-x-auto whitespace-nowrap scrollbar-none">
-            <button
-              v-for="item in navCategories"
-              :key="item"
-              @click="emit('explore-catalog')"
-              class="px-3 py-1.5 hover:text-stone-300 transition-colors cursor-pointer"
-            >
-              {{ item }}
-            </button>
-          </div>
-
-          <!-- Mobile toggle -->
-          <div class="md:hidden flex items-center justify-between">
-            <button
-              @click="mobileNavOpen = !mobileNavOpen"
-              class="flex items-center space-x-2 hover:text-stone-300 transition-colors cursor-pointer"
-            >
-              <Menu v-if="!mobileNavOpen" class="w-5 h-5" />
-              <X v-else class="w-5 h-5" />
-              <span>Shop Categories</span>
-            </button>
-            <button @click="emit('explore-catalog')" class="hover:text-stone-300 transition-colors cursor-pointer">
-              View All
-            </button>
-          </div>
-        </div>
-
-        <!-- Mobile dropdown menu -->
-        <div
-          v-if="mobileNavOpen"
-          class="md:hidden border-t border-white/10 bg-stone-900"
-        >
-          <div class="max-w-7xl mx-auto px-4 py-2 grid grid-cols-2 gap-1">
-            <button
-              v-for="item in navCategories"
-              :key="item"
-              @click="emit('explore-catalog')"
-              class="px-3 py-3 text-left hover:bg-white/5 hover:text-stone-300 rounded-lg transition-colors cursor-pointer"
-            >
-              {{ item }}
-            </button>
-          </div>
+        <div class="max-w-7xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between overflow-x-auto whitespace-nowrap scrollbar-none">
+          <button 
+            v-for="item in navCategories" 
+            :key="item"
+            @click="emit('explore-catalog')"
+            class="px-3 hover:text-stone-300 transition-colors cursor-pointer"
+          >
+            {{ item }}
+          </button>
         </div>
       </nav>
 
-      <!-- Main Hero Visual Showcase Banner -->
+      <!-- Main Visual Showcase Banner -->
       <section class="relative w-full overflow-hidden bg-stone-100">
         <div class="relative w-full h-[400px] sm:h-[500px] md:h-[650px]">
-          <img
-            src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2000&q=85"
-            alt="South African Furniture Contemporary Living Room"
+          <img 
+            src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2000&q=85" 
+            alt="South African Furniture Contemporary Living Room" 
             class="w-full h-full object-cover object-center"
           />
           <!-- Subtle vignette for realistic room depth -->
@@ -313,7 +276,7 @@ onMounted(() => {
         <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div class="flex items-center justify-center space-x-2">
             <Award class="w-4 h-4 text-stone-400 shrink-0" />
-            <span>100% Solid Hardwood</span>
+            <span>100% Solid Timber</span>
           </div>
           <div class="flex items-center justify-center space-x-2">
             <ShieldCheck class="w-4 h-4 text-stone-400 shrink-0" />
@@ -343,8 +306,8 @@ onMounted(() => {
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <!-- Card 1: Living Room -->
-          <div
-            @click="emit('explore-catalog')"
+          <div 
+            @click="emit('explore-catalog')" 
             class="group relative h-80 rounded-3xl overflow-hidden shadow-lg border border-slate-200 cursor-pointer"
           >
             <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80" alt="Living Room" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -357,8 +320,8 @@ onMounted(() => {
           </div>
 
           <!-- Card 2: Dining Room -->
-          <div
-            @click="emit('explore-catalog')"
+          <div 
+            @click="emit('explore-catalog')" 
             class="group relative h-80 rounded-3xl overflow-hidden shadow-lg border border-slate-200 cursor-pointer"
           >
             <img src="https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=800&q=80" alt="Dining Room" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -371,8 +334,8 @@ onMounted(() => {
           </div>
 
           <!-- Card 3: Storage & Credenzas -->
-          <div
-            @click="emit('explore-catalog')"
+          <div 
+            @click="emit('explore-catalog')" 
             class="group relative h-80 rounded-3xl overflow-hidden shadow-lg border border-slate-200 cursor-pointer"
           >
             <img src="https://images.unsplash.com/photo-1538688525198-9b88f6f53126?auto=format&fit=crop&w=800&q=80" alt="Storage" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -385,8 +348,8 @@ onMounted(() => {
           </div>
 
           <!-- Card 4: Accent Seating -->
-          <div
-            @click="emit('explore-catalog')"
+          <div 
+            @click="emit('explore-catalog')" 
             class="group relative h-80 rounded-3xl overflow-hidden shadow-lg border border-slate-200 cursor-pointer"
           >
             <img src="https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?auto=format&fit=crop&w=800&q=80" alt="Accent Armchairs" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -405,9 +368,9 @@ onMounted(() => {
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <!-- Image Left -->
           <div class="lg:col-span-6 relative rounded-2xl overflow-hidden shadow-2xl border border-slate-200 group">
-            <img
-              :src="craftsmanshipImageUrl"
-              alt="SAFS Furniture Authentic Timber Craftsmanship"
+            <img 
+              :src="craftsmanshipImageUrl" 
+              alt="SAFS Furniture Authentic Timber Craftsmanship" 
               class="w-full h-[400px] object-cover group-hover:scale-105 transition-transform duration-500"
             />
             <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl text-xs font-bold text-slate-900 border border-slate-200 shadow-md">
@@ -423,7 +386,7 @@ onMounted(() => {
                 Uncompromising Quality & Authentic Timber
               </h2>
               <p class="text-slate-600 text-sm leading-relaxed">
-                We reject mass-produced veneers and synthetic boards. Every SAFS Furniture item is sculpted from solid hardwoods, hand-finished with organic wax sealants that highlight natural grain patterns.
+                We reject cheap mass-produced veneers and synthetic boards. Every SAFS Furniture item is sculpted from solid hardwoods, hand-finished with organic wax sealants that highlight natural grain patterns.
               </p>
             </div>
 
@@ -464,7 +427,7 @@ onMounted(() => {
             <h2 class="text-3xl font-extrabold text-slate-900">Featured Best Sellers</h2>
           </div>
 
-          <button
+          <button 
             @click="emit('explore-catalog')"
             class="inline-flex items-center space-x-2 text-sm font-bold text-stone-700 hover:text-stone-900 cursor-pointer"
           >
@@ -475,15 +438,15 @@ onMounted(() => {
 
         <!-- Inventory Grid -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div
-            v-for="product in displayBestsellers"
+          <div 
+            v-for="product in displayBestsellers" 
             :key="product.id"
             class="bg-white border border-slate-200 hover:border-stone-400 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
           >
             <div class="relative h-64 overflow-hidden bg-slate-100 cursor-pointer" @click="emit('select-product', product)">
-              <img
-                :src="getPrimaryImageUrl(product)"
-                :alt="product.name"
+              <img 
+                :src="getPrimaryImageUrl(product)" 
+                :alt="product.name" 
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div class="absolute top-3 left-3 px-3 py-1 bg-stone-700 text-white text-xs font-bold rounded-lg shadow-md uppercase tracking-wider">
@@ -509,13 +472,13 @@ onMounted(() => {
                 </div>
 
                 <div class="flex items-center space-x-2">
-                  <button
+                  <button 
                     @click.stop="emit('select-product', product)"
                     class="px-3.5 py-2 bg-stone-50 text-stone-700 hover:bg-stone-100 rounded-xl text-xs font-bold transition-colors cursor-pointer"
                   >
                     Details
                   </button>
-                  <button
+                  <button 
                     @click.stop="emit('quick-add-to-cart', product)"
                     class="p-2 bg-stone-700 hover:bg-stone-800 text-white rounded-xl shadow-sm cursor-pointer"
                     title="Quick Add to Cart"
@@ -537,8 +500,8 @@ onMounted(() => {
         </div>
 
         <div class="space-y-3">
-          <div
-            v-for="(faq, idx) in faqs"
+          <div 
+            v-for="(faq, idx) in faqs" 
             :key="idx"
             class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs"
           >

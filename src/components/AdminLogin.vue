@@ -63,7 +63,7 @@ async function handleSubmit() {
 <template>
   <div class="max-w-md mx-auto my-12 p-8 bg-white border border-slate-200 rounded-3xl shadow-xl space-y-6">
     <div class="text-center space-y-2">
-      <div class="w-12 h-12 bg-blue-100 border border-blue-200 text-blue-700 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+      <div class="w-12 h-12 bg-stone-100 border border-stone-200 text-stone-700 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
         <Lock class="w-6 h-6" />
       </div>
       <h2 class="text-2xl font-black text-slate-900">
@@ -96,7 +96,7 @@ async function handleSubmit() {
             type="email"
             required
             placeholder="admin@furniturehaven.co.za"
-            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 transition-all"
+            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/20 transition-all"
           />
         </div>
       </div>
@@ -110,7 +110,7 @@ async function handleSubmit() {
             :type="showPassword ? 'text' : 'password'"
             required
             placeholder="••••••••••••"
-            class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 transition-all"
+            class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-stone-600 focus:ring-2 focus:ring-stone-600/20 transition-all"
           />
           <button
             type="button"
@@ -127,7 +127,7 @@ async function handleSubmit() {
       <button
         type="submit"
         :disabled="loading"
-        class="w-full py-3.5 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-blue-700/20 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2"
+        class="w-full py-3.5 bg-stone-700 hover:bg-stone-800 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-stone-700/20 disabled:opacity-50 cursor-pointer flex items-center justify-center space-x-2"
       >
         <span v-if="loading">Signing In...</span>
         <template v-else>
@@ -141,7 +141,7 @@ async function handleSubmit() {
     <div class="text-center pt-3 border-t border-slate-100">
       <button
         @click="isSignUpMode = !isSignUpMode; errorMessage = ''; successMessage = ''"
-        class="text-xs text-slate-500 hover:text-blue-700 transition-colors font-medium cursor-pointer"
+        class="text-xs text-slate-500 hover:text-stone-700 transition-colors font-medium cursor-pointer"
       >
         {{ isSignUpMode ? 'Already have an account? Sign In' : 'Need to register a new admin account? Click here' }}
       </button>
