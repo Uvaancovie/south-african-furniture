@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { Product } from '../types/database'
-import {
-  Heart,
+import { 
+  ShoppingBag, 
+  ChevronLeft, 
+  Ruler, 
+  Truck, 
+  ShieldCheck, 
+  Minus, 
+  Plus, 
+  Check, 
+  Star,
   Maximize2,
-  Minus,
-  Plus,
   X,
+  Heart
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -78,7 +85,7 @@ function handleAddToCart() {
 
 <template>
   <div class="space-y-6 animate-fade-in pb-16 max-w-7xl mx-auto px-4 md:px-8">
-
+    
     <!-- Minimal Breadcrumb Navigation -->
     <div class="flex flex-wrap items-center justify-between gap-4 py-2 border-b border-neutral-100">
       <div class="flex items-center space-x-1.5 text-xs md:text-sm text-neutral-500 font-normal">
@@ -103,19 +110,19 @@ function handleAddToCart() {
 
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 pt-4">
-
+      
       <!-- Left Column: Interactive Image Gallery -->
       <div class="lg:col-span-7 space-y-4">
         <!-- Main Image Frame -->
         <div class="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100 group rounded-sm">
-          <img
-            :src="currentImageUrl"
-            :alt="product.name"
+          <img 
+            :src="currentImageUrl" 
+            :alt="product.name" 
             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
           />
 
           <!-- Zoom Trigger Button -->
-          <button
+          <button 
             @click="isZoomOpen = true"
             class="absolute bottom-4 right-4 p-2 bg-white/80 hover:bg-white text-stone-700 rounded-full shadow-xs backdrop-blur-sm transition-all cursor-pointer"
             title="Expand Image"
@@ -142,7 +149,7 @@ function handleAddToCart() {
 
       <!-- Right Column: Clean Purchase Details Panel -->
       <div class="lg:col-span-5 flex flex-col justify-start">
-
+        
         <!-- Product Name -->
         <h1 class="text-3xl md:text-5xl font-semibold text-neutral-900 tracking-tight leading-tight mb-4">
           {{ product.name }}
@@ -191,7 +198,7 @@ function handleAddToCart() {
         <div class="flex flex-wrap items-center gap-6 mb-8">
           <!-- Quantity Control -->
           <div class="flex items-center border border-stone-400 rounded-sm bg-white">
-            <button
+            <button 
               @click="quantity > 1 ? quantity-- : null"
               class="px-3 py-1.5 text-stone-600 hover:bg-stone-50 cursor-pointer disabled:opacity-45"
               :disabled="quantity <= 1"
@@ -201,7 +208,7 @@ function handleAddToCart() {
             <span class="px-3 font-medium text-stone-900 text-sm min-w-[28px] text-center">
               {{ quantity }}
             </span>
-            <button
+            <button 
               @click="quantity++"
               class="px-3 py-1.5 text-stone-600 hover:bg-stone-50 cursor-pointer"
             >
@@ -222,8 +229,8 @@ function handleAddToCart() {
             @click="handleAddToCart"
             :class="[
               'flex-1 py-3 px-6 rounded-full font-medium text-sm border tracking-wide transition-all text-center cursor-pointer',
-              isAdded
-                ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
+              isAdded 
+                ? 'bg-emerald-50 border-emerald-500 text-emerald-700' 
                 : 'border-stone-500 text-stone-900 bg-white hover:bg-stone-50'
             ]"
           >
@@ -233,7 +240,6 @@ function handleAddToCart() {
 
           <!-- Buy Now Solid Pill Button -->
           <button
-            @click="handleAddToCart"
             class="flex-1 py-3 px-6 rounded-full font-medium text-sm tracking-wide bg-black text-white hover:bg-neutral-900 transition-all text-center cursor-pointer"
           >
             Buy Now
@@ -257,8 +263,8 @@ function handleAddToCart() {
           @click="activeTab = tab.id as any"
           :class="[
             'pb-4 text-xs md:text-sm font-medium transition-all border-b-2 whitespace-nowrap cursor-pointer',
-            activeTab === tab.id
-              ? 'border-neutral-900 text-neutral-900 font-semibold'
+            activeTab === tab.id 
+              ? 'border-neutral-900 text-neutral-900 font-semibold' 
               : 'border-transparent text-neutral-500 hover:text-neutral-800'
           ]"
         >
@@ -299,15 +305,15 @@ function handleAddToCart() {
     <div v-if="relatedProducts.length > 0" class="space-y-6 pt-10 border-t border-stone-200">
       <h3 class="text-xl font-medium text-neutral-900">Related Pieces</h3>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div
-          v-for="item in relatedProducts"
+        <div 
+          v-for="item in relatedProducts" 
           :key="item.id"
           @click="emit('select-product', item)"
           class="group cursor-pointer space-y-2"
         >
           <div class="aspect-[4/3] overflow-hidden bg-neutral-100">
-            <img
-              :src="item.product_images?.[0]?.image_url || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80'"
+            <img 
+              :src="item.product_images?.[0]?.image_url || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=600&q=80'" 
               class="w-full h-full object-cover group-hover:scale-101 transition-transform"
             />
           </div>
@@ -322,14 +328,4 @@ function handleAddToCart() {
       </div>
     </div>
 
-    <!-- Image Fullscreen Modal -->
-    <div v-if="isZoomOpen" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4" @click.self="isZoomOpen = false">
-      <div class="relative max-w-5xl w-full max-h-[90vh]">
-        <button @click="isZoomOpen = false" class="absolute -top-12 right-0 text-white hover:text-stone-400 p-2 cursor-pointer">
-          <X class="w-8 h-8" />
-        </button>
-        <img :src="currentImageUrl" class="w-full h-full object-contain max-h-[85vh] rounded-2xl shadow-2xl" />
-      </div>
-    </div>
-  </div>
-</template>
+    <!-- Image Fullscreen Modal
