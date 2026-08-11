@@ -12,15 +12,17 @@ import {
   Check, 
   Star,
   Maximize2,
-  X
+  X,
+  Heart
 } from 'lucide-vue-next'
 
 const props = defineProps<{
   product: Product;
   allProducts: Product[];
+  wishlist?: Product[];
 }>()
 
-const emit = defineEmits(['back', 'add-to-cart', 'select-product'])
+const emit = defineEmits(['back', 'add-to-cart', 'select-product', 'toggle-wishlist'])
 
 const quantity = ref(1)
 const activeTab = ref<'description' | 'specs' | 'shipping' | 'care'>('description')
@@ -44,6 +46,10 @@ const relatedProducts = computed(() => {
     .filter(p => p.id !== props.product.id && (p.category === props.product.category || p.is_featured))
     .slice(0, 3)
 })
+
+function isWishlisted(productId: string): boolean {
+  return (props.wishlist || []).some(item => item.id === productId)
+}
 
 function formatPrice(val: number) {
   return new Intl.NumberFormat('en-ZA', {
@@ -160,6 +166,19 @@ function handleAddToCart() {
                 <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
                   Includes VAT
                 </span>
+
+                <!-- Wishlist Toggle -->
+                <button
+                  @click="emit('toggle-wishlist', product)"
+                  class="ml-auto inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border"
+                  :class="isWishlisted(product.id)
+                    ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-rose-300 hover:text-rose-600'"
+                  :title="isWishlisted(product.id) ? 'Remove from wishlist' : 'Add to wishlist'"
+                >
+                  <Heart class="w-4 h-4" :class="isWishlisted(product.id) ? 'fill-current' : ''" />
+                  <span>{{ isWishlisted(product.id) ? 'Wishlisted' : 'Save' }}</span>
+                </button>
               </div>
             </div>
 

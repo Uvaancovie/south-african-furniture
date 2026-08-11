@@ -8,6 +8,7 @@ import ProductDetail from './components/ProductDetail.vue'
 import AdminLogin from './components/AdminLogin.vue'
 import AdminUpload from './components/AdminUpload.vue'
 import CartDrawer from './components/CartDrawer.vue'
+import WishlistDrawer from './components/WishlistDrawer.vue'
 import { Store, ShieldCheck, LogOut, ShoppingBag, Building2, CheckCircle2, Home, Menu, X } from 'lucide-vue-next'
 
 const currentView = ref<'landing' | 'catalog' | 'detail' | 'admin'>('landing')
@@ -21,6 +22,11 @@ const loadingAuth = ref(true)
 const cartItems = ref<CartItem[]>([])
 const isCartOpen = ref(false)
 const toastMessage = ref('')
+
+// Wishlist State
+const wishlistItems = ref<Product[]>([])
+const isWishlistOpen = ref(false)
+const WISHLIST_STORAGE_KEY = 'safs_wishlist'
 
 const totalCartCount = computed(() => {
   return cartItems.value.reduce((acc, item) => acc + item.quantity, 0)
@@ -116,6 +122,58 @@ function handleCheckout() {
   isCartOpen.value = false
 }
 
+// --- Wishlist ---
+function loadWishlist() {
+  try {
+    const raw = localStorage.getItem(WISHLIST_STORAGE_KEY)
+    if (raw) {
+      wishlistItems.value = JSON.parse(raw)
+    }
+  } catch (err) {
+    console.error('Failed to load wishlist from storage:', err)
+  }
+}
+
+function persistWishlist() {
+  try {
+    localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(wishlistItems.value))
+  } catch (err) {
+    console.error('Failed to persist wishlist:', err)
+  }
+}
+
+function toggleWishlist(product: Product) {
+  const existingIndex = wishlistItems.value.findIndex(item => item.id === product.id)
+
+  if (existingIndex > -1) {
+    wishlistItems.value.splice(existingIndex, 1)
+    showToast(`Removed "${product.name}" from wishlist`)
+  } else {
+    wishlistItems.value.push(product)
+    showToast(`Added "${product.name}" to wishlist!`)
+  }
+
+  persistWishlist()
+}
+
+function isProductWishlisted(productId: string): boolean {
+  return wishlistItems.value.some(item => item.id === productId)
+}
+
+function removeFromWishlist(index: number) {
+  wishlistItems.value.splice(index, 1)
+  persistWishlist()
+}
+
+function addWishlistToCart(product: Product) {
+  handleAddToCart({ product, quantity: 1 })
+  const existingIndex = wishlistItems.value.findIndex(item => item.id === product.id)
+  if (existingIndex > -1) {
+    wishlistItems.value.splice(existingIndex, 1)
+    persistWishlist()
+  }
+}
+
 function showToast(msg: string) {
   toastMessage.value = msg
   setTimeout(() => {
@@ -126,6 +184,7 @@ function showToast(msg: string) {
 onMounted(() => {
   fetchAllProducts()
   checkAuthSession()
+  loadWishlist()
   supabase.auth.onAuthStateChange((_event, session) => {
     userSession.value = session?.user || null
   })
@@ -151,7 +210,7 @@ onMounted(() => {
           </div>
           <div>
             <span class="text-base sm:text-xl font-black text-slate-900 tracking-tight block group-hover:text-stone-700 transition-colors leading-tight">
-              SAFS <span class="text-stone-700">FURNITURE</span>
+              SAFS <span class="text-stone-700"></span>
             </span>
             <span class="hidden sm:block text-[10px] text-stone-700 tracking-widest uppercase -mt-1 font-bold leading-tight">
               South African Hardwoods
@@ -312,6 +371,16 @@ onMounted(() => {
       @checkout="handleCheckout"
     />
 
+    <!-- Dynamic Wishlist Drawer -->
+    <WishlistDrawer
+      :is-open="isWishlistOpen"
+      :wishlist="wishlistItems"
+      @close="isWishlistOpen = false"
+      @remove-item="removeFromWishlist"
+      @add-to-cart="addWishlistToCart"
+      @select-product="handleSelectProduct"
+    />
+
     <!-- Main View Routing -->
     <main class="flex-1 w-full mx-auto">
 
@@ -322,12 +391,15 @@ onMounted(() => {
       >
         <LandingPage
           :products="allProducts"
+          :wishlist="wishlistItems"
           @explore-catalog="currentView = 'catalog'"
           @select-product="handleSelectProduct"
           @quick-add-to-cart="handleQuickAddToCart"
           @products-updated="fetchAllProducts"
           @open-cart="isCartOpen = true"
+          @open-wishlist="isWishlistOpen = true"
           @navigate-admin="currentView = 'admin'"
+          @toggle-wishlist="toggleWishlist"
         />
       </div>
 
@@ -336,8 +408,10 @@ onMounted(() => {
       <!-- View 1: Main Catalog -->
       <Catalog 
         v-if="currentView === 'catalog'" 
+        :wishlist="wishlistItems"
         @select-product="handleSelectProduct"
         @quick-add-to-cart="handleQuickAddToCart"
+        @toggle-wishlist="toggleWishlist"
       />
 
       <!-- View 2: E-Commerce Product Detail Page -->
@@ -345,9 +419,11 @@ onMounted(() => {
         v-else-if="currentView === 'detail' && selectedProduct" 
         :product="selectedProduct"
         :all-products="allProducts"
+        :wishlist="wishlistItems"
         @back="currentView = 'catalog'"
         @add-to-cart="handleAddToCart"
         @select-product="handleSelectProduct"
+        @toggle-wishlist="toggleWishlist"
       />
 
       <!-- View 3: Admin Portal -->

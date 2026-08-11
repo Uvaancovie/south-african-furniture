@@ -6,10 +6,15 @@ import {
   Search, 
   Box, 
   X, 
-  ShoppingBag
+  ShoppingBag,
+  Heart
 } from 'lucide-vue-next'
 
-const emit = defineEmits(['select-product', 'quick-add-to-cart'])
+const props = defineProps<{
+  wishlist?: Product[];
+}>()
+
+const emit = defineEmits(['select-product', 'quick-add-to-cart', 'toggle-wishlist'])
 
 const products = ref<Product[]>([])
 const loading = ref(true)
@@ -251,6 +256,10 @@ function getSwatches(category: string): string[] {
   return sampleSwatches[category] || sampleSwatches['Default']
 }
 
+function isWishlisted(productId: string): boolean {
+  return (props.wishlist || []).some(item => item.id === productId)
+}
+
 onMounted(() => {
   fetchProducts()
 })
@@ -405,6 +414,16 @@ onMounted(() => {
             title="Quick Add"
           >
             <ShoppingBag class="w-4 h-4" />
+          </button>
+
+          <!-- Wishlist Toggle -->
+          <button 
+            @click.stop="emit('toggle-wishlist', product)"
+            class="absolute top-3 right-3 p-2.5 rounded-full shadow-md transition-all cursor-pointer"
+            :class="isWishlisted(product.id) ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-white/90 backdrop-blur-xs text-stone-900 hover:text-rose-600 hover:bg-white'"
+            :title="isWishlisted(product.id) ? 'Remove from wishlist' : 'Add to wishlist'"
+          >
+            <Heart class="w-4 h-4" :class="isWishlisted(product.id) ? 'fill-current' : ''" />
           </button>
         </div>
 

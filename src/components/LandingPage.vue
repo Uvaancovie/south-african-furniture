@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { supabase } from '../utils/supabase'
 import type { Product } from '../types/database'
 import {
@@ -10,6 +10,8 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   ShoppingBag,
   Hammer,
   Search,
@@ -22,15 +24,52 @@ import {
 
 const props = defineProps<{
   products?: Product[];
+  wishlist?: Product[];
 }>()
 
-const emit = defineEmits(['explore-catalog', 'select-product', 'quick-add-to-cart', 'products-updated', 'open-cart', 'navigate-admin'])
+const emit = defineEmits(['explore-catalog', 'select-product', 'quick-add-to-cart', 'products-updated', 'open-cart', 'open-wishlist', 'navigate-admin', 'toggle-wishlist'])
 
 const liveProducts = ref<Product[]>([])
 const loading = ref(false)
 const activeFaq = ref<number | null>(0)
 const searchQuery = ref('')
 const mobileNavOpen = ref(false)
+const heroIndex = ref(0)
+
+const heroSlides = [
+  {
+    image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2000&q=85',
+    alt: 'Contemporary Living Room',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=2000&q=85',
+    alt: 'Modern Sofa Showcase',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=2000&q=85',
+    alt: 'Dining Room Setting',
+  },
+ 
+]
+
+let heroTimer: ReturnType<typeof setInterval> | null = null
+
+function nextHero() {
+  heroIndex.value = (heroIndex.value + 1) % heroSlides.length
+}
+
+function prevHero() {
+  heroIndex.value = (heroIndex.value - 1 + heroSlides.length) % heroSlides.length
+}
+
+function goToHero(idx: number) {
+  heroIndex.value = idx
+}
+
+function restartHeroTimer() {
+  if (heroTimer) clearInterval(heroTimer)
+  heroTimer = setInterval(nextHero, 5000)
+}
 
 const navCategories = [
   'Inspiration',
@@ -138,6 +177,10 @@ function getPrimaryImageUrl(product: Product): string {
   return 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80'
 }
 
+function isWishlisted(productId: string): boolean {
+  return (props.wishlist || []).some(item => item.id === productId)
+}
+
 function formatPrice(val: number) {
   return new Intl.NumberFormat('en-ZA', {
     style: 'currency',
@@ -171,6 +214,11 @@ function toggleFaq(idx: number) {
 
 onMounted(() => {
   fetchLiveInventory()
+  restartHeroTimer()
+})
+
+onBeforeUnmount(() => {
+  if (heroTimer) clearInterval(heroTimer)
 })
 </script>
 
@@ -212,8 +260,8 @@ onMounted(() => {
 
         <!-- Brand Title (Center) -->
         <div class="text-center">
-          <h1 class="text-2xl md:text-3xl font-black text-stone-950 tracking-tight font-serif uppercase">
-            South African Furniture
+          <h1 class="text-xl md:text-2xl font-semibold text-stone-950 tracking-wide uppercase">
+            Furniture
           </h1>
         </div>
 
@@ -234,14 +282,27 @@ onMounted(() => {
             <span>Track Order</span>
           </button>
 
-          <button class="flex flex-col items-center space-y-1 hover:text-black transition-colors">
-            <Heart class="w-4 h-4 stroke-[1.5]" />
-            <span>Wishlist</span>
-          </button>
+          <button
+    @click="emit('open-wishlist')"
+    class="group relative flex flex-col items-center space-y-1 transition-colors"
+  >
+    <span class="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-full shadow-sm transition-all border border-rose-200">
+      <Heart class="w-4 h-4 stroke-[1.5]" />
+    </span>
+    <span class="text-stone-800 group-hover:text-black">Wishlist</span>
+    <span
+      v-if="(props.wishlist?.length || 0) > 0"
+      class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-rose-600 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-md"
+    >
+      {{ props.wishlist?.length }}
+    </span>
+  </button>
 
-          <button @click="emit('open-cart')" class="flex flex-col items-center space-y-1 hover:text-black transition-colors relative">
-            <ShoppingBag class="w-4 h-4 stroke-[1.5]" />
-            <span>Cart</span>
+          <button @click="emit('open-cart')" class="group relative flex flex-col items-center space-y-1 transition-colors">
+            <span class="p-2.5 bg-white/90 hover:bg-black hover:text-white text-stone-900 backdrop-blur-xs rounded-full shadow-md transition-all border border-stone-200">
+              <ShoppingBag class="w-4 h-4 stroke-[1.5]" />
+            </span>
+            <span class="text-stone-800 group-hover:text-black">Cart</span>
           </button>
         </div>
       </div>
@@ -298,13 +359,45 @@ onMounted(() => {
       <!-- Main Hero Visual Showcase Banner -->
       <section class="relative w-full overflow-hidden bg-stone-100">
         <div class="relative w-full h-[400px] sm:h-[500px] md:h-[650px]">
-          <img
-            src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2000&q=85"
-            alt="South African Furniture Contemporary Living Room"
-            class="w-full h-full object-cover object-center"
-          />
+          <Transition name="hero-fade" mode="out-in">
+            <img
+              :key="heroIndex"
+              :src="heroSlides[heroIndex].image"
+              :alt="heroSlides[heroIndex].alt"
+              class="w-full h-full object-cover object-center"
+            />
+          </Transition>
+
           <!-- Subtle vignette for realistic room depth -->
           <div class="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
+
+          <!-- Prev / Next Arrows -->
+          <button
+            @click="prevHero(); restartHeroTimer()"
+            class="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 bg-white/80 hover:bg-white text-stone-900 rounded-full shadow-md backdrop-blur-xs transition-colors cursor-pointer"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft class="w-5 h-5" />
+          </button>
+          <button
+            @click="nextHero(); restartHeroTimer()"
+            class="absolute right-4 top-1/2 -translate-y-1/2 p-2.5 bg-white/80 hover:bg-white text-stone-900 rounded-full shadow-md backdrop-blur-xs transition-colors cursor-pointer"
+            aria-label="Next slide"
+          >
+            <ChevronRight class="w-5 h-5" />
+          </button>
+
+          <!-- Dots Indicator -->
+          <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center space-x-2">
+            <button
+              v-for="(slide, idx) in heroSlides"
+              :key="idx"
+              @click="goToHero(idx); restartHeroTimer()"
+              class="h-2 rounded-full transition-all duration-300 cursor-pointer"
+              :class="idx === heroIndex ? 'w-8 bg-white' : 'w-2 bg-white/50 hover:bg-white/80'"
+              :aria-label="`Go to slide ${idx + 1}`"
+            ></button>
+          </div>
         </div>
       </section>
 
@@ -492,6 +585,16 @@ onMounted(() => {
               <div class="absolute bottom-3 left-3 px-3 py-1 bg-white/90 backdrop-blur-md text-stone-900 text-xs font-semibold rounded-lg shadow-sm border border-slate-200">
                 {{ product.category }}
               </div>
+
+              <!-- Wishlist Toggle -->
+              <button
+                @click.stop="emit('toggle-wishlist', product)"
+                class="absolute top-3 right-3 p-2 rounded-full shadow-md transition-all cursor-pointer"
+                :class="isWishlisted(product.id) ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-white/90 backdrop-blur-md text-stone-700 hover:text-rose-600 hover:bg-white border border-slate-200'"
+                :title="isWishlisted(product.id) ? 'Remove from wishlist' : 'Add to wishlist'"
+              >
+                <Heart class="w-4 h-4" :class="isWishlisted(product.id) ? 'fill-current' : ''" />
+              </button>
             </div>
 
             <div class="p-6 flex-1 flex flex-col justify-between space-y-4">
@@ -561,3 +664,15 @@ onMounted(() => {
     </main>
   </div>
 </template>
+
+<style scoped>
+.hero-fade-enter-active,
+.hero-fade-leave-active {
+  transition: opacity 0.7s ease;
+}
+
+.hero-fade-enter-from,
+.hero-fade-leave-to {
+  opacity: 0;
+}
+</style>
