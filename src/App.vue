@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { supabase } from './utils/supabase'
 import type { Product, CartItem } from './types/database'
 import LandingPage from './components/LandingPage.vue'
@@ -11,7 +12,17 @@ import CartDrawer from './components/CartDrawer.vue'
 import WishlistDrawer from './components/WishlistDrawer.vue'
 import { Store, ShieldCheck, LogOut, ShoppingBag, Building2, CheckCircle2, Home, Menu, X } from 'lucide-vue-next'
 
-const currentView = ref<'landing' | 'catalog' | 'detail' | 'admin'>('landing')
+const route = useRoute()
+const router = useRouter()
+
+const currentView = computed<'landing' | 'catalog' | 'detail' | 'admin'>(() => {
+  const name = route.name
+  if (name === 'catalog') return 'catalog'
+  if (name === 'product') return 'detail'
+  if (name === 'admin') return 'admin'
+  return 'landing'
+})
+
 const selectedProduct = ref<Product | null>(null)
 const allProducts = ref<Product[]>([])
 
@@ -35,9 +46,54 @@ const totalCartCount = computed(() => {
 const mobileMenuOpen = ref(false)
 
 function navigateTo(view: 'landing' | 'catalog' | 'detail' | 'admin') {
-  currentView.value = view
+  const paths: Record<string, string> = {
+    landing: '/',
+    catalog: '/catalog',
+    detail: '/catalog',
+    admin: '/admin',
+  }
+  router.push(paths[view])
   mobileMenuOpen.value = false
 }
+
+// Resolve the product from the URL slug (also supports id fallback)
+watch(
+  () => [route.name, route.params.slug, allProducts.value] as const,
+  ([name, slug, products]) => {
+    if (name !== 'product') return
+
+    const found = products.find(
+      p => p.slug === slug || p.id === slug
+    )
+
+    if (found) {
+      selectedProduct.value = found
+      return
+    }
+
+    if (products.length > 0) {
+      router.replace('/catalog')
+    }
+  },
+  { immediate: true }
+)
+
+// SEO: dynamic document title for shareable product links
+watch(
+  () => [route.name, selectedProduct.value?.name] as const,
+  ([name, productName]) => {
+    if (name === 'product' && productName) {
+      document.title = `${productName} | SAFS Furniture`
+    } else if (name === 'catalog') {
+      document.title = 'Catalog | SAFS Furniture'
+    } else if (name === 'admin') {
+      document.title = 'Admin Portal | SAFS Furniture'
+    } else {
+      document.title = 'SAFS Furniture — Handcrafted South African Hardwood Collection'
+    }
+  },
+  { immediate: true }
+)
 
 async function fetchAllProducts() {
   try {
@@ -69,19 +125,18 @@ async function checkAuthSession() {
 
 function handleAuthenticated(user: any) {
   userSession.value = user
-  currentView.value = 'admin'
+  router.push('/admin')
 }
 
 async function handleLogout() {
   await supabase.auth.signOut()
   userSession.value = null
-  currentView.value = 'landing'
+  router.push('/')
 }
 
 function handleSelectProduct(product: Product) {
   selectedProduct.value = product
-  currentView.value = 'detail'
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  router.push({ name: 'product', params: { slug: product.slug || product.id } })
 }
 
 function handleAddToCart(payload: { product: Product; quantity: number; selectedMaterial?: string }) {
@@ -221,14 +276,14 @@ onMounted(() => {
         <!-- Desktop Nav (hidden on mobile) -->
         <nav class="hidden sm:flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button
-            @click="currentView = 'landing'"
+            @click="navigateTo('landing')"
             class="px-3 lg:px-4 py-2 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-200"
           >
             <Home class="w-4 h-4" />
             <span class="hidden lg:inline">Home</span>
           </button>
           <button
-            @click="currentView = 'catalog'"
+            @click="navigateTo('catalog')"
             :class="[
               'px-3 lg:px-4 py-2 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap',
               currentView === 'catalog' || currentView === 'detail'
@@ -240,7 +295,7 @@ onMounted(() => {
             <span>Catalog</span>
           </button>
           <button
-            @click="currentView = 'admin'"
+            @click="navigateTo('admin')"
             :class="[
               'px-3 lg:px-4 py-2 text-xs lg:text-sm font-bold rounded-lg lg:rounded-xl transition-all flex items-center space-x-1.5 cursor-pointer whitespace-nowrap',
               currentView === 'admin' 
@@ -392,13 +447,13 @@ onMounted(() => {
         <LandingPage
           :products="allProducts"
           :wishlist="wishlistItems"
-          @explore-catalog="currentView = 'catalog'"
+          @explore-catalog="navigateTo('catalog')"
           @select-product="handleSelectProduct"
           @quick-add-to-cart="handleQuickAddToCart"
           @products-updated="fetchAllProducts"
           @open-cart="isCartOpen = true"
           @open-wishlist="isWishlistOpen = true"
-          @navigate-admin="currentView = 'admin'"
+          @navigate-admin="navigateTo('admin')"
           @toggle-wishlist="toggleWishlist"
         />
       </div>
@@ -420,7 +475,7 @@ onMounted(() => {
         :product="selectedProduct"
         :all-products="allProducts"
         :wishlist="wishlistItems"
-        @back="currentView = 'catalog'"
+        @back="navigateTo('catalog')"
         @add-to-cart="handleAddToCart"
         @select-product="handleSelectProduct"
         @toggle-wishlist="toggleWishlist"
