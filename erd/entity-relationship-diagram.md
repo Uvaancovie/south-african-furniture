@@ -1,9 +1,10 @@
-# SAFS Furniture Marketplace — Entity Relationship Diagram
+# SAFS Furniture Store — Entity Relationship Diagram
 
-**Source:** `vision/requirements.md` v1.0
+**Source:** `vision/requirements.md` v2.0
 **Stack target:** Supabase (Postgres) — `uuid` primary keys, `jsonb` for flexible payloads, `numeric` for money.
+**Model:** single-brand store (no vendors, no payouts, no marketplace split)
 
-> Legend: ★ = exists in current prototype/schema · † = new for marketplace (v1.0)
+> Legend: ★ = exists in current prototype/schema · † = new for platform (v1.0)
 
 ---
 
@@ -12,20 +13,13 @@
 ```mermaid
 erDiagram
     USERS ||--o{ ADDRESSES : "has billing/shipping"
-    USERS ||--o{ USER_CONSENTS : "gives"
-    USERS ||--o| VENDOR_PROFILES : "is vendor"
+    USERS ||--o{ USER_CONSENTS : gives
     USERS ||--o{ ORDERS : places
     USERS ||--o{ CART_ITEMS : owns
     USERS ||--o{ WISHLIST_ITEMS : owns
     USERS ||--o{ PRODUCT_REVIEWS : writes
-    USERS ||--o{ VENDOR_REVIEWS : writes
     USERS ||--o{ ORDER_MESSAGES : posts
     USERS ||--o{ AUDIT_LOGS : "performs action"
-
-    VENDOR_PROFILES ||--o{ PRODUCTS : lists
-    VENDOR_PROFILES ||--o{ SHIPPING_RULES : defines
-    VENDOR_PROFILES ||--o{ VENDOR_PAYOUTS : receives
-    VENDOR_PROFILES ||--o{ VENDOR_REVIEWS : "receives rating"
 
     CATEGORIES ||--o{ CATEGORIES : "parent_id self-ref"
     CATEGORIES ||--o{ PRODUCTS : classifies
@@ -36,7 +30,6 @@ erDiagram
     PRODUCTS ||--o{ ORDER_ITEMS : "sold as"
     PRODUCTS ||--o{ PRODUCT_REVIEWS : rated
 
-    DELIVERY_ZONES ||--o{ SHIPPING_RULES : "per vendor fee"
     DELIVERY_ZONES ||--o{ ORDERS : "selected zone"
 
     ORDERS ||--o{ ORDER_ITEMS : contains
@@ -62,9 +55,9 @@ erDiagram
         varchar name
         varchar phone
         timestamp email_verified_at
-        varchar role "customer | vendor | admin"
+        varchar role "customer | admin"
         boolean is_active
-        varchar two_factor_secret
+        varchar two_factor_secret "admin only"
         timestamp created_at
         timestamp updated_at
     }
@@ -87,27 +80,11 @@ erDiagram
         uuid id PK
         uuid user_id FK
         uuid legal_document_id FK
-        varchar consent_type "account | marketing | vendor_sharing"
+        varchar consent_type "account | marketing | third_party"
         boolean granted
         varchar policy_version
         timestamp granted_at
         timestamp revoked_at
-    }
-
-    VENDOR_PROFILES {
-        uuid id PK
-        uuid user_id FK UK
-        varchar business_name
-        varchar registration_number
-        varchar country_of_origin
-        varchar description
-        varchar logo_url
-        numeric commission_rate "0.00 - 1.00"
-        varchar bank_account_token "encrypted / tokenised"
-        varchar fica_status "pending | verified"
-        varchar status "pending | approved | suspended"
-        timestamp approved_at
-        timestamp created_at
     }
 
     CATEGORIES {
@@ -123,7 +100,6 @@ erDiagram
 
     PRODUCTS {
         uuid id PK
-        uuid vendor_id FK
         uuid category_id FK
         varchar name
         varchar slug UK
@@ -178,16 +154,7 @@ erDiagram
         varchar province
         varchar area
         numeric km_from_base
-        numeric base_fee
-        boolean is_active
-    }
-
-    SHIPPING_RULES {
-        uuid id PK
-        uuid vendor_id FK
-        uuid delivery_zone_id FK
-        numeric fee
-        numeric free_above "null = never free"
+        numeric fee "single store price per zone"
         boolean is_active
     }
 
@@ -217,7 +184,6 @@ erDiagram
         uuid id PK
         uuid order_id FK
         uuid product_id FK
-        uuid vendor_id FK
         int quantity
         numeric unit_price
         numeric subtotal
@@ -229,7 +195,7 @@ erDiagram
     ORDER_MESSAGES {
         uuid id PK
         uuid order_id FK
-        uuid user_id FK "customer | vendor | admin"
+        uuid user_id FK "customer | admin"
         text message
         timestamp created_at
     }
@@ -287,33 +253,9 @@ erDiagram
         uuid user_id FK
         int rating "1-5"
         text comment
-        text vendor_reply
+        text admin_reply
         boolean moderated
         timestamp created_at
-    }
-
-    VENDOR_REVIEWS {
-        uuid id PK
-        uuid order_id FK
-        uuid vendor_id FK
-        uuid user_id FK
-        int rating
-        text comment
-        timestamp created_at
-    }
-
-    VENDOR_PAYOUTS {
-        uuid id PK
-        uuid vendor_id FK
-        date period_start
-        date period_end
-        numeric gross
-        numeric commission
-        numeric refunds
-        numeric net
-        varchar status "pending | paid | failed"
-        varchar bank_reference
-        timestamp paid_at
     }
 
     AUDIT_LOGS {
@@ -331,7 +273,7 @@ erDiagram
 
     LEGAL_DOCUMENTS {
         uuid id PK
-        varchar doc_type "terms | privacy | returns | seller_terms"
+        varchar doc_type "terms | privacy | returns | cookies"
         varchar version
         text content
         timestamp effective_date
@@ -351,28 +293,28 @@ erDiagram
 
 ---
 
-## Key design decisions (from requirements.md)
+## Key design decisions (from requirements.md v2.0)
 
 | # | Decision | Rationale |
 |---|---|---|
-| 1 | `orders` is customer-level; `order_items.vendor_id` splits fulfilment per vendor (FR-CHK-002) | One consolidated payment, one order per vendor for fulfilment |
+| 1 | `orders` is the single order per purchase (no vendor split) (FR-CHK-002) | Single-brand store; one order, one fulfilment flow |
 | 2 | `product_images.is_primary` + `sort_order` (FR-CAT-003, FR-CAT-004) | Primary image drives catalogue cards; sort_order drives gallery order |
 | 3 | `user_consents` links to a `legal_documents` version (FR-AUTH-006) | POPIA requires proving *which* policy version was accepted, with timestamps |
 | 4 | `order_items.product_name/product_data` snapshots (existing pattern) | Price/name changes must not rewrite historical invoices |
 | 5 | `payment_transactions.raw_payload` + `gateway_reference` UK (FR-CHK-006) | Webhook replay protection and audit for PCI SAQ A |
 | 6 | `returns` links to `order_item_id` and creates `refunds` via `payment_transactions` (FR-RET-001..003) | CPA cooling-off refunds flow back through the gateway |
-| 7 | `vendor_profiles.commission_rate` + `vendor_payouts` (FR-PAY-001..003) | Net payout = gross − commission − refunds |
-| 8 | `audit_logs` immutable (NFR-OBS-003) | Admin/vendor actions traceable for regulatory requests |
-| 9 | `cart_items` server-side (FR-CAR-001) | Requirements move cart from session/ref-based to persisted per user |
-| 10 | `order_status_history` (FR-ORD-004, FR-ORD-007) | Every state change has actor + timestamp |
+| 7 | `audit_logs` immutable (NFR-OBS-003) | Admin actions traceable for regulatory requests |
+| 8 | `cart_items` server-side (FR-CAR-001) | Requirements move cart from session/ref-based to persisted per user |
+| 9 | `order_status_history` (FR-ORD-004, FR-ORD-007) | Every state change has actor + timestamp |
+| 10 | `delivery_zones.fee` per zone (single store) | No vendor `shipping_rules` table needed (FR-SHP-003) |
 
 ## Current prototype diff to target schema
 
 | Current (prototype) | Target | Change |
 |---|---|---|
-| `products` (no vendor) | + `vendor_id` FK | Multi-vendor (FR-MARK-003) |
+| `products` (no vendor fields) | ✓ unchanged model | No vendor_id — single seller (v2.0) |
 | `product_images` (image_url, is_primary, sort_order) | + `alt_text` | Accessibility (NFR-ACC-002) |
-| `orders.user_id` + `order_items` | + `vendor_id`, `payment_status`, statuses | Marketplace split + payment lifecycle |
-| `delivery_zones.fee` | `base_fee` + `shipping_rules` per vendor | Vendor shipping delegation (FR-SHP-003) |
-| (none) | `vendor_profiles`, `payouts`, `returns`, `refunds`, `user_consents`, `audit_logs`, `legal_documents`, `reviews`, `cart_items`, `wishlist_items` | Marketplace + compliance entities |
+| `orders` + `order_items` | + `payment_status`, full statuses, `placed_at` | Payment lifecycle (FR-CHK-007) |
+| `delivery_zones.fee` | ✓ retained | Single-store shipping config (FR-SHP-003) |
+| (none) | `payment_transactions`, `returns`, `refunds`, `user_consents`, `audit_logs`, `legal_documents`, `reviews`, `cart_items`, `wishlist_items`, `addresses`, `order_status_history`, `email_logs` | Compliance + UX entities |
 | `orders.paid_at = now()` (auto) | `payment_transactions` driven by gateway webhook | FR-CHK-005..007 |
