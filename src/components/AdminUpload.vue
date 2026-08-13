@@ -2,20 +2,23 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '../utils/supabase'
 import type { Product, NewProductInput } from '../types/database'
-import { 
-  UploadCloud, 
-  PackagePlus, 
-  Trash2, 
-  CheckCircle2, 
-  AlertCircle, 
-  RefreshCw, 
-  List, 
-  PlusCircle, 
+import {
+  UploadCloud,
+  PackagePlus,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  RefreshCw,
+  List,
+  PlusCircle,
   Sparkles,
   Eye,
   EyeOff,
   Pencil,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Star
 } from 'lucide-vue-next'
 
 const emit = defineEmits(['logout', 'product-updated'])
@@ -33,7 +36,7 @@ const selectedFiles = ref<File[]>([])
 const imagePreviews = ref<string[]>([])
 
 const editingProductId = ref<string | null>(null)
-const existingImages = ref<{ id: string; url: string }[]>([])
+const existingImages = ref<{ id: string; url: string; is_primary: boolean; sort_order: number }[]>([])
 
 const form = ref<NewProductInput>({
   name: '',
@@ -131,10 +134,14 @@ function handleEditProduct(product: Product) {
     is_active: product.is_active,
     is_featured: product.is_featured,
   }
-  existingImages.value = (product.product_images || []).map(img => ({
-    id: img.id,
-    url: img.image_url,
-  }))
+  existingImages.value = (product.product_images || [])
+    .map(img => ({
+      id: img.id,
+      url: img.image_url,
+      is_primary: !!img.is_primary,
+      sort_order: img.sort_order ?? 0,
+    }))
+    .sort((a, b) => a.sort_order - b.sort_order)
   selectedFiles.value = []
   imagePreviews.value = []
   activeTab.value = 'upload'
@@ -164,6 +171,61 @@ function cancelProductEdit() {
   activeTab.value = 'inventory'
 }
 
+async function persistImageOrder(images: { id: string; is_primary: boolean; sort_order: number }[]) {
+  await Promise.all(images.map(img =>
+    supabase
+      .from('product_images')
+      .update({ is_primary: img.is_primary, sort_order: img.sort_order })
+      .eq('id', img.id)
+  ))
+}
+
+async function moveExistingImage(index: number, direction: -1 | 1) {
+  const target = index + direction
+  if (index < 0 || target < 0 || target >= existingImages.value.length) return
+
+  const imgs = existingImages.value.map(img => ({ ...img }))
+  ;[imgs[index], imgs[target]] = [imgs[target], imgs[index]]
+  existingImages.value = imgs.map((img, i) => ({ ...img, sort_order: i }))
+
+  try {
+    await persistImageOrder(existingImages.value)
+    successMessage.value = 'Image order updated.'
+  } catch (err: any) {
+    errorMessage.value = err.message || 'Failed to update image order.'
+  }
+}
+
+async function setPrimaryImage(imageId: string) {
+  const idx = existingImages.value.findIndex(img => img.id === imageId)
+  if (idx === -1 || existingImages.value[idx].is_primary) return
+
+  const imgs = existingImages.value.map(img => ({ ...img }))
+  const [moved] = imgs.splice(idx, 1)
+  imgs.unshift(moved)
+
+  existingImages.value = imgs.map((img, i) => ({
+    ...img,
+    is_primary: i === 0,
+    sort_order: i,
+  }))
+
+  try {
+    await persistImageOrder(existingImages.value)
+    successMessage.value = 'Primary image updated.'
+  } catch (err: any) {
+    errorMessage.value = err.message || 'Failed to update primary image.'
+  }
+}
+
+function movePreview(index: number, direction: -1 | 1) {
+  const target = index + direction
+  if (index < 0 || target < 0 || target >= selectedFiles.value.length) return
+
+  ;[selectedFiles.value[index], selectedFiles.value[target]] = [selectedFiles.value[target], selectedFiles.value[index]]
+  ;[imagePreviews.value[index], imagePreviews.value[target]] = [imagePreviews.value[target], imagePreviews.value[index]]
+}
+
 async function removeExistingImage(imageId: string) {
   if (!confirm('Remove this image?')) return
   try {
@@ -174,6 +236,16 @@ async function removeExistingImage(imageId: string) {
 
     if (error) throw error
     existingImages.value = existingImages.value.filter(img => img.id !== imageId)
+
+    if (existingImages.value.length > 0 && !existingImages.value.some(img => img.is_primary)) {
+      existingImages.value[0].is_primary = true
+    }
+    existingImages.value = existingImages.value.map((img, i) => ({ ...img, sort_order: i }))
+
+    try {
+      await persistImageOrder(existingImages.value)
+    } catch { /* non-fatal: order persisted on next reorder */ }
+
     successMessage.value = 'Image removed.'
   } catch (err: any) {
     errorMessage.value = err.message || 'Failed to remove image.'
@@ -189,7 +261,10 @@ async function fetchInventory() {
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    products.value = data || []
+    products.value = (data || []).map(p => ({
+      ...p,
+      product_images: [...(p.product_images || [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+    }))
   } catch (err: any) {
     console.error('Inventory fetch error:', err)
   } finally {
@@ -253,10 +328,11 @@ async function handleProductUpload() {
               .getPublicUrl(fileName)
 
             const existingCount = existingImages.value.length
+            const hasExistingPrimary = existingImages.value.some(img => img.is_primary)
             await supabase.from('product_images').insert([{
               product_id: productId,
               image_url: publicUrlData.publicUrl,
-              is_primary: existingCount === 0 && i === 0,
+              is_primary: !hasExistingPrimary && i === 0,
               sort_order: existingCount + i,
             }])
           }
@@ -638,34 +714,105 @@ onMounted(() => {
 
           <!-- Existing Images (edit mode) -->
           <div v-if="existingImages.length > 0" class="pt-2">
-            <label class="text-xs font-bold text-slate-500 block mb-2 uppercase tracking-wider">Current Images</label>
+            <label class="text-xs font-bold text-slate-500 block mb-2 uppercase tracking-wider">Current Images — Hover a tile to reorder or star as primary</label>
             <div class="grid grid-cols-4 sm:grid-cols-6 gap-3">
-              <div v-for="img in existingImages" :key="img.id" class="relative group rounded-xl overflow-hidden border border-slate-200 h-20 bg-slate-100">
+              <div v-for="(img, idx) in existingImages" :key="img.id" class="relative group rounded-xl overflow-hidden border border-slate-200 h-20 bg-slate-100">
                 <img :src="img.url" class="w-full h-full object-cover" />
-                <button 
-                  type="button" 
-                  @click="removeExistingImage(img.id)" 
-                  class="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+
+                <button
+                  type="button"
+                  @click="setPrimaryImage(img.id)"
+                  class="absolute top-1 left-1 p-1 rounded-md transition-opacity opacity-0 group-hover:opacity-100 cursor-pointer"
+                  :class="[
+                    img.is_primary
+                      ? 'bg-amber-400 text-white cursor-default'
+                      : 'bg-white/90 hover:bg-amber-100 text-slate-500 hover:text-amber-600'
+                  ]"
+                  :title="img.is_primary ? 'Primary image (first shown in catalog)' : 'Set as primary image'"
+                >
+                  <Star class="w-3.5 h-3.5" :class="img.is_primary ? 'fill-white' : ''" />
+                </button>
+
+                <button
+                  type="button"
+                  @click="removeExistingImage(img.id)"
+                  class="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                 >
                   <Trash2 class="w-3.5 h-3.5" />
                 </button>
+
+                <div class="absolute bottom-0 inset-x-0 flex justify-center gap-1 pb-1 pt-3 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    @click="moveExistingImage(idx, -1)"
+                    :disabled="idx === 0"
+                    class="p-1 bg-white/90 hover:bg-white text-slate-600 rounded-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    title="Move earlier"
+                  >
+                    <ChevronLeft class="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    @click="moveExistingImage(idx, 1)"
+                    :disabled="idx === existingImages.length - 1"
+                    class="p-1 bg-white/90 hover:bg-white text-slate-600 rounded-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    title="Move later"
+                  >
+                    <ChevronRight class="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- New Image Previews -->
           <div v-if="imagePreviews.length > 0" class="pt-2">
-            <label class="text-xs font-bold text-slate-500 block mb-2 uppercase tracking-wider">New Images</label>
+            <label class="text-xs font-bold text-slate-500 block mb-2 uppercase tracking-wider">New Images — first preview becomes the catalog cover</label>
             <div class="grid grid-cols-4 sm:grid-cols-6 gap-3">
-              <div v-for="(src, idx) in imagePreviews" :key="'new-'+idx" class="relative group rounded-xl overflow-hidden border border-slate-200 h-20 bg-slate-100">
+              <div
+                v-for="(src, idx) in imagePreviews"
+                :key="'new-'+idx"
+                class="relative group rounded-xl overflow-hidden border h-20 bg-slate-100"
+                :class="idx === 0 && (!editingProductId || existingImages.length === 0) ? 'border-amber-400 ring-1 ring-amber-400' : 'border-slate-200'"
+              >
                 <img :src="src" class="w-full h-full object-cover" />
-                <button 
-                  type="button" 
-                  @click="removeImage(idx)" 
-                  class="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+
+                <span
+                  v-if="idx === 0 && (!editingProductId || existingImages.length === 0)"
+                  class="absolute top-1 left-1 flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-400 text-white text-[10px] font-bold rounded-md"
+                >
+                  <Star class="w-3 h-3 fill-white" />
+                  1st
+                </span>
+
+                <button
+                  type="button"
+                  @click="removeImage(idx)"
+                  class="absolute top-1 right-1 p-1 bg-rose-600 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                 >
                   <Trash2 class="w-3.5 h-3.5" />
                 </button>
+
+                <div class="absolute bottom-0 inset-x-0 flex justify-center gap-1 pb-1 pt-3 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    @click="movePreview(idx, -1)"
+                    :disabled="idx === 0"
+                    class="p-1 bg-white/90 hover:bg-white text-slate-600 rounded-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    title="Move earlier"
+                  >
+                    <ChevronLeft class="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    @click="movePreview(idx, 1)"
+                    :disabled="idx === imagePreviews.length - 1"
+                    class="p-1 bg-white/90 hover:bg-white text-slate-600 rounded-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    title="Move later"
+                  >
+                    <ChevronRight class="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -211,7 +211,10 @@ async function fetchProducts() {
       console.warn('Supabase query warning (using sample dataset):', error.message)
       products.value = sampleProducts
     } else if (data && data.length > 0) {
-      products.value = data
+      products.value = data.map((p: any) => ({
+        ...p,
+        product_images: [...(p.product_images || [])].sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+      }))
     } else {
       products.value = sampleProducts
     }

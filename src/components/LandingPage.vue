@@ -76,9 +76,8 @@ const navCategories = [
   'Couch',
   'Made To Order',
   'Shop By Room',
-  'Rugs',
-  'Decor',
-  'Guide',
+  
+
   'Offers',
 ]
 
@@ -143,7 +142,10 @@ async function fetchLiveInventory() {
       .order('created_at', { ascending: false })
 
     if (!error && data && data.length > 0) {
-      liveProducts.value = data
+      liveProducts.value = (data as any[]).map(p => ({
+        ...p,
+        product_images: [...(p.product_images || [])].sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+      }))
     } else {
       liveProducts.value = defaultRealInventory
     }

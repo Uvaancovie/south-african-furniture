@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import type { Product } from '../types/database'
 import {
+  ChevronLeft,
+  ChevronRight,
   Heart,
   Maximize2,
   Minus,
@@ -42,6 +44,37 @@ const currentImageUrl = computed(() => {
 
 const totalPrice = computed(() => {
   return props.product.price * quantity.value
+})
+
+const productImages = computed(() => props.product.product_images || [])
+
+function goToImage(index: number) {
+  activeImageIndex.value = (index + productImages.value.length) % productImages.value.length
+}
+
+function nextImage() {
+  goToImage(activeImageIndex.value + 1)
+}
+
+function prevImage() {
+  goToImage(activeImageIndex.value - 1)
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (!isZoomOpen.value) return
+  if (e.key === 'Escape') isZoomOpen.value = false
+  if (e.key === 'ArrowRight') nextImage()
+  if (e.key === 'ArrowLeft') prevImage()
+}
+
+watch(isZoomOpen, (open) => {
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+  document.body.style.overflow = ''
 })
 
 const relatedProducts = computed(() => {
@@ -107,12 +140,38 @@ function handleAddToCart() {
       <!-- Left Column: Interactive Image Gallery -->
       <div class="lg:col-span-7 space-y-4">
         <!-- Main Image Frame -->
-        <div class="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100 group rounded-sm">
+        <div class="relative w-full h-[48vh] sm:h-[55vh] md:h-[60vh] lg:h-[66vh] overflow-hidden bg-neutral-100 rounded-sm group">
           <img
             :src="currentImageUrl"
             :alt="product.name"
-            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
+            class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
           />
+
+          <!-- Carousel Prev / Next Buttons -->
+          <button
+            v-if="productImages.length > 1"
+            @click="prevImage"
+            class="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-white/85 hover:bg-white text-stone-700 rounded-full shadow-md backdrop-blur-sm transition-all cursor-pointer"
+            title="Previous Image"
+          >
+            <ChevronLeft class="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <button
+            v-if="productImages.length > 1"
+            @click="nextImage"
+            class="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-white/85 hover:bg-white text-stone-700 rounded-full shadow-md backdrop-blur-sm transition-all cursor-pointer"
+            title="Next Image"
+          >
+            <ChevronRight class="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+
+          <!-- Image Counter -->
+          <span
+            v-if="productImages.length > 1"
+            class="absolute bottom-4 left-4 px-2.5 py-1 text-xs font-medium text-stone-700 bg-white/85 backdrop-blur-sm rounded-full shadow-md"
+          >
+            {{ activeImageIndex + 1 }} / {{ productImages.length }}
+          </span>
 
           <!-- Zoom Trigger Button -->
           <button
@@ -323,13 +382,51 @@ function handleAddToCart() {
     </div>
 
     <!-- Image Fullscreen Modal -->
-    <div v-if="isZoomOpen" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4" @click.self="isZoomOpen = false">
-      <div class="relative max-w-5xl w-full max-h-[90vh]">
-        <button @click="isZoomOpen = false" class="absolute -top-12 right-0 text-white hover:text-stone-400 p-2 cursor-pointer">
-          <X class="w-8 h-8" />
+    <Teleport to="body">
+      <div
+        v-if="isZoomOpen"
+        class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center"
+        @click.self="isZoomOpen = false"
+      >
+        <button
+          @click="isZoomOpen = false"
+          class="absolute top-4 right-4 z-10 text-white/80 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer"
+          title="Close"
+        >
+          <X class="w-6 h-6" />
         </button>
-        <img :src="currentImageUrl" class="w-full h-full object-contain max-h-[85vh] rounded-2xl shadow-2xl" />
+
+        <button
+          v-if="productImages.length > 1"
+          @click="prevImage"
+          class="absolute left-2 sm:left-5 top-1/2 -translate-y-1/2 z-10 text-white/80 hover:text-white p-2 sm:p-3.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer"
+          title="Previous Image"
+        >
+          <ChevronLeft class="w-6 h-6 sm:w-8 sm:h-8" />
+        </button>
+
+        <img
+          :src="currentImageUrl"
+          :alt="product.name"
+          class="w-auto h-auto max-w-[92vw] sm:max-w-[85vw] max-h-[86vh] sm:max-h-[90vh] object-contain rounded-lg shadow-2xl"
+        />
+
+        <button
+          v-if="productImages.length > 1"
+          @click="nextImage"
+          class="absolute right-2 sm:right-5 top-1/2 -translate-y-1/2 z-10 text-white/80 hover:text-white p-2 sm:p-3.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer"
+          title="Next Image"
+        >
+          <ChevronRight class="w-6 h-6 sm:w-8 sm:h-8" />
+        </button>
+
+        <div
+          v-if="productImages.length > 1"
+          class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/85 text-xs sm:text-sm bg-white/10 backdrop-blur-sm px-3.5 py-1.5 rounded-full"
+        >
+          {{ activeImageIndex + 1 }} / {{ productImages.length }}
+        </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>

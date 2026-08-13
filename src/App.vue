@@ -104,7 +104,10 @@ async function fetchAllProducts() {
       .order('created_at', { ascending: false })
 
     if (!error && data && data.length > 0) {
-      allProducts.value = data
+      allProducts.value = (data as any[]).map(p => ({
+        ...p,
+        product_images: [...(p.product_images || [])].sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+      }))
     }
   } catch (err) {
     console.error('Error fetching inventory for App:', err)
