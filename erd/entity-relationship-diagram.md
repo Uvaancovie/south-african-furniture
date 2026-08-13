@@ -137,16 +137,14 @@ erDiagram
         uuid user_id FK
         uuid product_id FK
         int quantity
-        timestamp added_at
-        "UNIQUE (user_id, product_id)"
+        timestamp added_at "UNIQUE (user_id, product_id)"
     }
 
     WISHLIST_ITEMS {
         uuid id PK
         uuid user_id FK
         uuid product_id FK
-        timestamp created_at
-        "UNIQUE (user_id, product_id)"
+        timestamp created_at "UNIQUE (user_id, product_id)"
     }
 
     DELIVERY_ZONES {
@@ -248,7 +246,7 @@ erDiagram
 
     PRODUCT_REVIEWS {
         uuid id PK
-        uuid order_item_id FK UK "one verified review per purchase"
+        uuid order_item_id FK "UK: one verified review per purchase"
         uuid product_id FK
         uuid user_id FK
         int rating "1-5"
