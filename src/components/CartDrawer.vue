@@ -1,34 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { CartItem } from '../types/database'
 import { ShoppingBag, X, Trash2, ArrowRight } from 'lucide-vue-next'
 
-const props = defineProps<{
+defineProps<{
   isOpen: boolean;
   cartItems: CartItem[];
 }>()
 
 const emit = defineEmits(['close', 'update-quantity', 'remove-item', 'checkout'])
-
-const subtotal = computed(() => {
-  return props.cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0)
-})
-
-const shippingFee = computed(() => {
-  return subtotal.value > 15000 || props.cartItems.length === 0 ? 0 : 450.00
-})
-
-const grandTotal = computed(() => {
-  return subtotal.value + shippingFee.value
-})
-
-function formatPrice(val: number) {
-  return new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency: 'ZAR',
-    maximumFractionDigits: 2
-  }).format(val)
-}
 </script>
 
 <template>
@@ -80,11 +59,7 @@ function formatPrice(val: number) {
               <p v-if="item.product.material" class="text-xs text-slate-500 truncate">
                 {{ item.product.material }}
               </p>
-              <div class="flex items-center justify-between mt-2">
-                <span class="font-extrabold text-stone-700 text-sm">
-                  {{ formatPrice(item.product.price * item.quantity) }}
-                </span>
-
+              <div class="flex items-center justify-end mt-2">
                 <div class="flex items-center space-x-2 bg-white border border-slate-300 rounded-lg text-xs">
                   <button 
                     @click="emit('update-quantity', { index: idx, quantity: item.quantity - 1 })"
@@ -110,21 +85,9 @@ function formatPrice(val: number) {
 
         <!-- Footer Checkout Summary -->
         <div v-if="cartItems.length > 0" class="p-6 border-t border-slate-200 bg-slate-50 space-y-4">
-          <div class="space-y-2 text-xs text-slate-600">
-            <div class="flex justify-between">
-              <span>Subtotal</span>
-              <span class="font-bold text-slate-900">{{ formatPrice(subtotal) }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>Estimated SA Delivery</span>
-              <span v-if="shippingFee === 0" class="font-bold text-emerald-600 uppercase">Free Delivery</span>
-              <span v-else class="font-bold text-slate-900">{{ formatPrice(shippingFee) }}</span>
-            </div>
-            <div class="flex justify-between pt-2 border-t border-slate-200 text-sm font-extrabold text-slate-900">
-              <span>Total Incl. VAT</span>
-              <span class="text-stone-700 text-base">{{ formatPrice(grandTotal) }}</span>
-            </div>
-          </div>
+          <p class="text-xs text-slate-600 text-center bg-white border border-slate-200 rounded-xl px-4 py-3">
+            Pricing is provided on quotation — our team will confirm your total including delivery.
+          </p>
 
           <button
             @click="emit('checkout')"

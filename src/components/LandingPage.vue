@@ -38,18 +38,25 @@ const heroIndex = ref(0)
 
 const heroSlides = [
   {
-    image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=2000&q=85',
-    alt: 'Contemporary Living Room',
+    image: 'https://vydleiyxfqrhxoddbcpi.supabase.co/storage/v1/object/public/product-images/a9411a86-b059-468b-9c03-c29e311bbb71/1787296485552-0.jpg',
+    alt: '4-Piece Modern Circular Lounge Set - Espresso Round Table & 4 Grey Accent Chairs',
   },
   {
-    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=2000&q=85',
-    alt: 'Modern Sofa Showcase',
+    image: 'https://vydleiyxfqrhxoddbcpi.supabase.co/storage/v1/object/public/product-images/58d59cbc-43e5-4488-9068-8b0b4f45ffcb/1787293170209-1.jpg',
+    alt: 'Luxury Contemporary Dining Set with Crescent Pedestal Table & High-Back Chairs',
   },
   {
-    image: 'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=2000&q=85',
-    alt: 'Dining Room Setting',
+    image: 'https://vydleiyxfqrhxoddbcpi.supabase.co/storage/v1/object/public/product-images/c1a82d73-957f-4f99-a34e-0c6aeb82562d/1786968369398-0.jpg',
+    alt: 'Luxor Geometric Upholstered Headboard with Gold Accents - Premium Grey',
   },
- 
+  {
+    image: 'https://vydleiyxfqrhxoddbcpi.supabase.co/storage/v1/object/public/product-images/abd82667-c642-4043-a57a-5fef2597dd23/1786602279649-0.jpg',
+    alt: 'Modern Black Oval Pedestal Coffee Table',
+  },
+  {
+    image: 'https://vydleiyxfqrhxoddbcpi.supabase.co/storage/v1/object/public/product-images/977e3408-1ea6-4518-a7fd-745c19aba022/1786016998600-0.jpg',
+    alt: 'Chair & Table Set',
+  },
 ]
 
 let heroTimer: ReturnType<typeof setInterval> | null = null
@@ -181,14 +188,6 @@ function getPrimaryImageUrl(product: Product): string {
 
 function isWishlisted(productId: string): boolean {
   return (props.wishlist || []).some(item => item.id === productId)
-}
-
-function formatPrice(val: number) {
-  return new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency: 'ZAR',
-    maximumFractionDigits: 2
-  }).format(val)
 }
 
 const faqs = [
@@ -361,7 +360,7 @@ onBeforeUnmount(() => {
       <!-- Main Hero Visual Showcase Banner -->
       <section class="relative w-full overflow-hidden bg-stone-100">
         <div class="relative w-full h-[400px] sm:h-[500px] md:h-[650px]">
-          <Transition name="hero-fade" mode="out-in">
+          <Transition name="hero-fade">
             <img
               :key="heroIndex"
               :src="heroSlides[heroIndex].image"
@@ -442,7 +441,7 @@ onBeforeUnmount(() => {
             @click="emit('explore-catalog')"
             class="group relative h-80 rounded-3xl overflow-hidden shadow-lg border border-slate-200 cursor-pointer"
           >
-            <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80" alt="Living Room" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+            <img src="https://vydleiyxfqrhxoddbcpi.supabase.co/storage/v1/object/public/product-images/a9411a86-b059-468b-9c03-c29e311bbb71/1787296485552-0.jpg" alt="Living Room" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent"></div>
             <div class="absolute bottom-6 left-6 right-6 text-white space-y-1">
               <span class="text-xs text-stone-300 font-bold uppercase tracking-wider">Seating & Lounging</span>
@@ -456,7 +455,7 @@ onBeforeUnmount(() => {
             @click="emit('explore-catalog')"
             class="group relative h-80 rounded-3xl overflow-hidden shadow-lg border border-slate-200 cursor-pointer"
           >
-            <img src="https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=800&q=80" alt="Dining Room" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+            <img src="https://vydleiyxfqrhxoddbcpi.supabase.co/storage/v1/object/public/product-images/58d59cbc-43e5-4488-9068-8b0b4f45ffcb/1787293170209-1.jpg" alt="Dining Room" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent"></div>
             <div class="absolute bottom-6 left-6 right-6 text-white space-y-1">
               <span class="text-xs text-stone-300 font-bold uppercase tracking-wider">Dining & Gathering</span>
@@ -470,7 +469,7 @@ onBeforeUnmount(() => {
             @click="emit('explore-catalog')"
             class="group relative h-80 rounded-3xl overflow-hidden shadow-lg border border-slate-200 cursor-pointer"
           >
-            <img src="https://images.unsplash.com/photo-1538688525198-9b88f6f53126?auto=format&fit=crop&w=800&q=80" alt="Storage" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+            <img src="https://vydleiyxfqrhxoddbcpi.supabase.co/storage/v1/object/public/product-images/c1a82d73-957f-4f99-a34e-0c6aeb82562d/1786968369398-0.jpg" alt="Storage" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent"></div>
             <div class="absolute bottom-6 left-6 right-6 text-white space-y-1">
               <span class="text-xs text-stone-300 font-bold uppercase tracking-wider">Sideboards & Cabinets</span>
@@ -484,7 +483,7 @@ onBeforeUnmount(() => {
             @click="emit('explore-catalog')"
             class="group relative h-80 rounded-3xl overflow-hidden shadow-lg border border-slate-200 cursor-pointer"
           >
-            <img src="https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?auto=format&fit=crop&w=800&q=80" alt="Accent Armchairs" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+            <img src="https://vydleiyxfqrhxoddbcpi.supabase.co/storage/v1/object/public/product-images/abd82667-c642-4043-a57a-5fef2597dd23/1786602279649-0.jpg" alt="Accent Armchairs" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent"></div>
             <div class="absolute bottom-6 left-6 right-6 text-white space-y-1">
               <span class="text-xs text-stone-300 font-bold uppercase tracking-wider">Statement Pieces</span>
@@ -607,12 +606,7 @@ onBeforeUnmount(() => {
                 <p class="text-slate-500 text-xs line-clamp-2">{{ product.description || 'Solid hardwood furniture piece from SAFS Furniture.' }}</p>
               </div>
 
-              <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
-                <div>
-                  <span class="text-xs text-slate-400 block font-medium">Price (ZAR)</span>
-                  <span class="text-xl font-black text-stone-700">{{ formatPrice(product.price) }}</span>
-                </div>
-
+              <div class="pt-4 border-t border-slate-100 flex items-center justify-end">
                 <div class="flex items-center space-x-2">
                   <button
                     @click.stop="emit('select-product', product)"
@@ -670,7 +664,12 @@ onBeforeUnmount(() => {
 <style scoped>
 .hero-fade-enter-active,
 .hero-fade-leave-active {
-  transition: opacity 0.7s ease;
+  transition: opacity 0.8s ease;
+}
+
+.hero-fade-leave-active {
+  position: absolute;
+  inset: 0;
 }
 
 .hero-fade-enter-from,

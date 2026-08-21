@@ -1,7 +1,6 @@
-# SAFS Furniture Store — UML Diagrams
+# SAFS Furniture Marketplace — UML Diagrams
 
-**Source:** `vision/requirements.md` v2.0 · Renders on GitHub / VS Code (Mermaid extension) / mermaid-cli
-**Model:** single-brand online store (no third-party vendors)
+**Source:** `vision/requirements.md` v1.0 · Renders on GitHub / VS Code (Mermaid extension) / mermaid-cli
 **Contents:** 1) Use Case · 2) Domain Class Diagram · 3) Checkout Sequence · 4) Order State Machine
 
 ---
@@ -10,14 +9,14 @@
 
 ```mermaid
 flowchart TB
-    subgraph platform["SAFS Furniture Store"]
+    subgraph platform["SAFS Marketplace Platform"]
         direction TB
 
         subgraph storefront["Storefront"]
             BROWSE["Browse catalogue"]
             SEARCH["Search & filter"]
             VIEW["View product detail<br/>(gallery, specs, CPA info)"]
-            CART["Manage cart"]
+            CART["Manage multi-vendor cart"]
             WISHLIST["Manage wishlist"]
             CHECKOUT["Checkout & pay"]
             ORDERS["View orders / tracking"]
@@ -27,26 +26,38 @@ flowchart TB
             SUPPORT["Order messaging"]
         end
 
-        subgraph adminPortal["Admin Portal"]
-            PRODUCTS["Manage products, categories &<br/>product images (reorder / primary)"]
+        subgraph vendorPortal["Vendor Portal"]
+            APPLY["Apply to sell"]
+            LISTINGS["Manage listings & primary image"]
             STOCK["Manage stock & pricing"]
-            SHIPR["Configure shipping rules & zones"]
-            FULFIL["Fulfil orders (process/ship/deliver)"]
-            REFUNDS["Approve returns & issue refunds"]
-            MODERATE["Moderate reviews"]
-            CUSTOMERS["Manage customers"]
-            LEGAL["Manage legal docs & versions<br/>(T&Cs, privacy, returns)"]
+            SHIPR["Set shipping rules"]
+            FULFIL["Fulfil orders (process/ship)"]
+            PAYOUTV["View payouts & statements"]
+            REPLY["Reply to reviews"]
+            MESSAGING["Communicate on orders"]
+        end
+
+        subgraph adminPortal["Admin Portal"]
+            APPROVE["Approve / suspend vendors"]
+            MODERATE["Moderate listings, reviews, disputes"]
+            CATS["Manage categories & featured"]
+            ADMINORDERS["Oversee orders & refunds"]
+            ADMREV["Manage vendors & commission"]
+            LEGAL["Manage legal docs & versions"]
             AUDIT["View audit log"]
         end
     end
 
     consumer(["Consumer"])
-    admin(["Administrator (SAFS staff)"])
+    vendor(["Vendor"])
+    admin(["Administrator"])
     gateway["Payment Gateway (system)"]
     email["Email Service (system)"]
 
     consumer --> BROWSE & SEARCH & VIEW & CART & WISHLIST & CHECKOUT & ORDERS & RETURN & REVIEW & CONSENT & SUPPORT
-    admin --> PRODUCTS & STOCK & SHIPR & FULFIL & REFUNDS & MODERATE & CUSTOMERS & LEGAL & AUDIT
+    vendor --> APPLY
+    vendor --> LISTINGS & STOCK & SHIPR & FULFIL & PAYOUTV & REPLY & MESSAGING
+    admin --> APPROVE & MODERATE & CATS & ADMINORDERS & ADMREV & LEGAL & AUDIT
 
     CHECKOUT --> gateway : "hosted payment (PCI SSP)"
     gateway -. webhook .-> CHECKOUT
@@ -67,7 +78,7 @@ classDiagram
         +string email
         +string name
         +string phone
-        +string role "customer | admin"
+        +string role
         +bool email_verified
         +bool is_active
         +register()
@@ -94,6 +105,18 @@ classDiagram
         +revoke()
     }
 
+    class VendorProfile {
+        +uuid id
+        +string business_name
+        +string reg_number
+        +numeric commission_rate
+        +string bank_account_token
+        +string fica_status
+        +string status
+        +approve()
+        +suspend()
+    }
+
     class Category {
         +uuid id
         +string name
@@ -115,7 +138,6 @@ classDiagram
         +numeric height
         +numeric depth
         +numeric weight_kg
-        +string country_of_origin
         +bool is_active
         +bool is_featured
         +decrementStock(qty)
@@ -144,7 +166,13 @@ classDiagram
         +uuid id
         +string province
         +string area
+        +numeric base_fee
+    }
+
+    class ShippingRule {
+        +uuid id
         +numeric fee
+        +numeric free_above
     }
 
     class Order {
@@ -217,9 +245,18 @@ classDiagram
         +uuid id
         +int rating
         +string comment
-        +string admin_reply
+        +string vendor_reply
         +bool moderated
-        +isVerifiedPurchaser()
+    }
+
+    class VendorPayout {
+        +uuid id
+        +numeric gross
+        +numeric commission
+        +numeric refunds
+        +numeric net
+        +string status
+        +calculate()
     }
 
     class AuditLog {
@@ -234,11 +271,16 @@ classDiagram
 
     User "1" --> "0..*" Address : has
     User "1" --> "0..*" Consent : grants
+    User "1" --> "0..1" VendorProfile : is
     User "1" --> "0..*" Order : places
     User "1" --> "0..*" CartItem : owns
     User "1" --> "0..*" WishlistItem : owns
     User "1" --> "0..*" ProductReview : writes
     User "1" --> "0..*" OrderMessage : posts
+
+    VendorProfile "1" --> "0..*" Product : lists
+    VendorProfile "1" --> "0..*" ShippingRule : defines
+    VendorProfile "1" --> "0..*" VendorPayout : receives
 
     Category "1" --> "0..*" Category : parents
     Category "1" --> "0..*" Product : classifies
@@ -248,6 +290,7 @@ classDiagram
     Product "1" --> "0..*" OrderItem : sold
     Product "1" --> "0..*" ProductReview : rated
 
+    DeliveryZone "1" --> "0..*" ShippingRule : priced for
     DeliveryZone "1" --> "0..*" Order : applied to
 
     Order "1" --> "0..*" OrderItem : contains
@@ -278,7 +321,7 @@ classDiagram
     }
 
     class ShippingResolver {
-        +calculate(items, zone)
+        +calculate(items, zone, rules)
     }
 
     CartService --> Order : converts to
@@ -312,7 +355,7 @@ sequenceDiagram
     GW->>GW: Collect & process payment
     GW-->>API: Webhook (signed payload)
     API->>API: Verify HMAC signature + idempotency (gateway_reference)
-    API->>DB: Insert order + order_items (single order)
+    API->>DB: Insert order + order_items (vendor split)
     API->>DB: Confirm payment_transactions (status=succeeded)
     API->>DB: Decrement stock, set paid_at, payment_status=paid
     API->>Q: Enqueue OrderConfirmation (PDF VAT invoice)
@@ -330,17 +373,20 @@ stateDiagram-v2
     [*] --> Pending : payment intent created
     Pending --> Confirmed : webhook payment success
     Pending --> Cancelled : payment failed / timeout
-    Confirmed --> Processing : SAFS staff start fulfilment
+    Confirmed --> Processing : vendor starts fulfilment
     Processing --> Shipped : courier handover (email sent)
     Shipped --> Delivered : POD confirmed
     Shipped --> ReturnRequested : CPA cooling-off (5 business days)
     Delivered --> ReturnRequested : defect / warranty claim
     ReturnRequested --> Refunded : approved + gateway refund
-    ReturnRequested --> Rejected : denied, no refund
-    Refunded --> [*]
-    Rejected --> [*]
+    ReturnRequested --> Rejected : vendor denies, dispute resolved
+    ReturnRequested --> Disputed : escalation to admin mediator
+    Disputed --> Refunded
+    Disputed --> Rejected
     Confirmed --> Cancelled : customer cancels pre-fulfilment
     Cancelled --> Refunded : money-back (if paid)
+    Refunded --> [*]
+    Rejected --> [*]
 ```
 
 ---
@@ -349,5 +395,5 @@ stateDiagram-v2
 
 - **GitHub / GitLab:** Mermaid renders natively in markdown.
 - **VS Code:** install "Mermaid Preview" extension; or use the Markdown preview with mermaid support.
-- **CLI (PNG/SVG export):** `npx @mermaid-js/mermaid-cli -i uml/uml.md -o uml.svg`
+- **CLI (PNG/SVG export):** `npx @mermaid-js/mermaid-cli -i vision/erd.md -o erd.svg`
 - **draw.io / Lucidchart import:** paste the class diagram or ERD code into the "Insert > Advanced > Mermaid" option if supported; otherwise convert via mermaid.live.

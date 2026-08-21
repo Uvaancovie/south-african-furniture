@@ -42,10 +42,6 @@ const currentImageUrl = computed(() => {
   return 'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=1200&q=80'
 })
 
-const totalPrice = computed(() => {
-  return props.product.price * quantity.value
-})
-
 const productImages = computed(() => props.product.product_images || [])
 
 function goToImage(index: number) {
@@ -85,14 +81,6 @@ const relatedProducts = computed(() => {
 
 function isWishlisted(productId: string): boolean {
   return (props.wishlist || []).some(item => item.id === productId)
-}
-
-function formatPrice(val: number) {
-  return new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency: 'ZAR',
-    maximumFractionDigits: 0 // Removes decimals to match the "R3499" style
-  }).format(val).replace(/\s/g, '') // Removes spaces for compact display
 }
 
 function handleAddToCart() {
@@ -215,12 +203,9 @@ function handleAddToCart() {
         <!-- Divider Line -->
         <hr class="border-stone-200 mb-5" />
 
-        <!-- Price & Color Selectors -->
+        <!-- Color Selectors -->
         <div class="flex items-center justify-between mb-5">
-          <!-- Price Tag -->
-          <span class="text-2xl md:text-3xl font-semibold text-red-500">
-            {{ formatPrice(product.price) }}
-          </span>
+          <span class="text-sm font-medium text-neutral-500">Available Finishes</span>
 
           <!-- Color Swatches -->
           <div class="flex items-center space-x-2">
@@ -370,12 +355,9 @@ function handleAddToCart() {
               class="w-full h-full object-cover group-hover:scale-101 transition-transform"
             />
           </div>
-          <div class="flex justify-between items-start text-sm">
-            <div>
-              <h4 class="font-medium text-neutral-900">{{ item.name }}</h4>
-              <p class="text-neutral-500 text-xs">{{ item.category }}</p>
-            </div>
-            <span class="font-semibold text-neutral-900">{{ formatPrice(item.price) }}</span>
+          <div>
+            <h4 class="font-medium text-neutral-900">{{ item.name }}</h4>
+            <p class="text-neutral-500 text-xs">{{ item.category }}</p>
           </div>
         </div>
       </div>

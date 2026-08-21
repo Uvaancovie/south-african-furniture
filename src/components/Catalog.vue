@@ -239,14 +239,6 @@ const filteredProducts = computed(() => {
   })
 })
 
-function formatPrice(val: number) {
-  return new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency: 'ZAR',
-    maximumFractionDigits: 0
-  }).format(val)
-}
-
 function getPrimaryImageUrl(product: Product): string {
   if (product.product_images && product.product_images.length > 0) {
     const primary = product.product_images.find(img => img.is_primary)
@@ -441,8 +433,8 @@ onMounted(() => {
           </p>
         </div>
 
-        <!-- Color Swatch Row & Price -->
-        <div class="flex items-center justify-between pt-1">
+        <!-- Color Swatch Row -->
+        <div class="flex items-center pt-1">
           <div class="flex items-center space-x-1.5">
             <span 
               v-for="(hex, idx) in getSwatches(product.category)" 
@@ -452,10 +444,6 @@ onMounted(() => {
             ></span>
             <span class="text-[10px] text-stone-400 font-medium ml-1">+ More</span>
           </div>
-
-          <span class="text-sm font-semibold text-stone-900">
-            {{ formatPrice(product.price) }}
-          </span>
         </div>
       </div>
     </div>

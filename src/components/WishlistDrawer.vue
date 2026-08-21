@@ -9,14 +9,6 @@ const props = defineProps<{
 
 const emit = defineEmits(['close', 'remove-item', 'add-to-cart', 'select-product'])
 
-function formatPrice(val: number) {
-  return new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency: 'ZAR',
-    maximumFractionDigits: 2
-  }).format(val)
-}
-
 function getPrimaryImageUrl(product: Product): string {
   if (product.product_images && product.product_images.length > 0) {
     const primary = product.product_images.find(img => img.is_primary)
@@ -79,11 +71,7 @@ function getPrimaryImageUrl(product: Product): string {
               <p v-if="product.material" class="text-xs text-slate-500 truncate">
                 {{ product.material }}
               </p>
-              <div class="flex items-center justify-between mt-2">
-                <span class="font-extrabold text-stone-700 text-sm">
-                  {{ formatPrice(product.price) }}
-                </span>
-
+              <div class="flex items-center justify-end mt-2">
                 <button
                   @click="emit('add-to-cart', product)"
                   class="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-stone-700 hover:bg-stone-800 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
