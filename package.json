@@ -4,10 +4,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 3000 --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview",
-    "types:check": "vue-tsc --noEmit"
+    "types:check": "vue-tsc --noEmit",
+    "lint": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
