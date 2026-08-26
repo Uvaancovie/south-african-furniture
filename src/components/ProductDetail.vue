@@ -9,6 +9,8 @@ import {
   Minus,
   Plus,
   X,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-vue-next'
 
 const props = defineProps<{
@@ -24,6 +26,61 @@ const activeTab = ref<'description' | 'specs' | 'shipping' | 'care'>('descriptio
 const activeImageIndex = ref(0)
 const isZoomOpen = ref(false)
 const isAdded = ref(false)
+
+// Interactive Image Zoom State
+const isHoveringZoom = ref(false)
+const zoomPos = ref({ x: 50, y: 50 })
+const modalZoomScale = ref(1)
+const isModalPanning = ref(false)
+const modalPanPos = ref({ x: 0, y: 0 })
+const modalDragStart = ref({ x: 0, y: 0 })
+
+function handleMouseMove(e: MouseEvent) {
+  const target = e.currentTarget as HTMLElement
+  if (!target) return
+  const rect = target.getBoundingClientRect()
+  const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
+  const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100))
+  zoomPos.value = { x, y }
+}
+
+function handleMouseEnter() {
+  isHoveringZoom.value = true
+}
+
+function handleMouseLeave() {
+  isHoveringZoom.value = false
+}
+
+function toggleModalZoom() {
+  if (modalZoomScale.value === 1) {
+    modalZoomScale.value = 2.2
+  } else {
+    modalZoomScale.value = 1
+    modalPanPos.value = { x: 0, y: 0 }
+  }
+}
+
+function handleModalMouseDown(e: MouseEvent) {
+  if (modalZoomScale.value <= 1) return
+  isModalPanning.value = true
+  modalDragStart.value = {
+    x: e.clientX - modalPanPos.value.x,
+    y: e.clientY - modalPanPos.value.y
+  }
+}
+
+function handleModalMouseMove(e: MouseEvent) {
+  if (!isModalPanning.value || modalZoomScale.value <= 1) return
+  modalPanPos.value = {
+    x: e.clientX - modalDragStart.value.x,
+    y: e.clientY - modalDragStart.value.y
+  }
+}
+
+function handleModalMouseUp() {
+  isModalPanning.value = false
+}
 
 // Added color swatch options matching the screenshot's palette
 const colors = ref([
@@ -46,6 +103,8 @@ const productImages = computed(() => props.product.product_images || [])
 
 function goToImage(index: number) {
   activeImageIndex.value = (index + productImages.value.length) % productImages.value.length
+  modalZoomScale.value = 1
+  modalPanPos.value = { x: 0, y: 0 }
 }
 
 function nextImage() {
@@ -61,10 +120,16 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') isZoomOpen.value = false
   if (e.key === 'ArrowRight') nextImage()
   if (e.key === 'ArrowLeft') prevImage()
+  if (e.key === '+' || e.key === '=') modalZoomScale.value = Math.min(4, modalZoomScale.value + 0.5)
+  if (e.key === '-') modalZoomScale.value = Math.max(1, modalZoomScale.value - 0.5)
 }
 
 watch(isZoomOpen, (open) => {
   document.body.style.overflow = open ? 'hidden' : ''
+  if (!open) {
+    modalZoomScale.value = 1
+    modalPanPos.value = { x: 0, y: 0 }
+  }
 })
 
 onMounted(() => window.addEventListener('keydown', onKeydown))
@@ -127,27 +192,48 @@ function handleAddToCart() {
 
       <!-- Left Column: Interactive Image Gallery -->
       <div class="lg:col-span-7 space-y-4">
-        <!-- Main Image Frame -->
-        <div class="relative w-full h-[48vh] sm:h-[55vh] md:h-[60vh] lg:h-[66vh] overflow-hidden bg-neutral-100 rounded-sm group">
+        <!-- Main Image Frame with Interactive Hover Zoom -->
+        <div
+          class="relative w-full h-[48vh] sm:h-[55vh] md:h-[60vh] lg:h-[66vh] overflow-hidden bg-neutral-100 rounded-sm group cursor-zoom-in"
+          @mousemove="handleMouseMove"
+          @mouseenter="handleMouseEnter"
+          @mouseleave="handleMouseLeave"
+          @click="isZoomOpen = true"
+        >
           <img
             :src="currentImageUrl"
             :alt="product.name"
-            class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+            class="w-full h-full object-contain select-none transition-transform duration-150 ease-out"
+            :style="isHoveringZoom ? {
+              transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+              transform: 'scale(2.4)'
+            } : {
+              transform: 'scale(1)'
+            }"
           />
 
-          <!-- Carousel Prev / Next Buttons -->
+          <!-- Interactive Hover Indicator Tag -->
+          <div
+            class="absolute top-4 left-4 z-10 px-3 py-1 bg-white/85 backdrop-blur-md rounded-full border border-stone-200 text-[11px] font-medium text-stone-700 shadow-xs pointer-events-none transition-opacity duration-300 flex items-center space-x-1.5"
+            :class="isHoveringZoom ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'"
+          >
+            <ZoomIn class="w-3.5 h-3.5 text-stone-900" />
+            <span>{{ isHoveringZoom ? 'Pan to Inspect Detail' : 'Hover to Zoom • Click to Expand' }}</span>
+          </div>
+
+          <!-- Carousel Prev / Next Buttons (stop event propagation so zoom/click isn't triggered) -->
           <button
             v-if="productImages.length > 1"
-            @click="prevImage"
-            class="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-white/85 hover:bg-white text-stone-700 rounded-full shadow-md backdrop-blur-sm transition-all cursor-pointer"
+            @click.stop="prevImage"
+            class="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/85 hover:bg-white text-stone-700 rounded-full shadow-md backdrop-blur-sm transition-all cursor-pointer"
             title="Previous Image"
           >
             <ChevronLeft class="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button
             v-if="productImages.length > 1"
-            @click="nextImage"
-            class="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-white/85 hover:bg-white text-stone-700 rounded-full shadow-md backdrop-blur-sm transition-all cursor-pointer"
+            @click.stop="nextImage"
+            class="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/85 hover:bg-white text-stone-700 rounded-full shadow-md backdrop-blur-sm transition-all cursor-pointer"
             title="Next Image"
           >
             <ChevronRight class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -156,18 +242,19 @@ function handleAddToCart() {
           <!-- Image Counter -->
           <span
             v-if="productImages.length > 1"
-            class="absolute bottom-4 left-4 px-2.5 py-1 text-xs font-medium text-stone-700 bg-white/85 backdrop-blur-sm rounded-full shadow-md"
+            class="absolute bottom-4 left-4 z-10 px-2.5 py-1 text-xs font-medium text-stone-700 bg-white/85 backdrop-blur-sm rounded-full shadow-md pointer-events-none"
           >
             {{ activeImageIndex + 1 }} / {{ productImages.length }}
           </span>
 
           <!-- Zoom Trigger Button -->
           <button
-            @click="isZoomOpen = true"
-            class="absolute bottom-4 right-4 p-2 bg-white/80 hover:bg-white text-stone-700 rounded-full shadow-xs backdrop-blur-sm transition-all cursor-pointer"
-            title="Expand Image"
+            @click.stop="isZoomOpen = true"
+            class="absolute bottom-4 right-4 z-10 p-2 bg-white/85 hover:bg-white text-stone-700 rounded-full shadow-xs backdrop-blur-sm transition-all cursor-pointer flex items-center space-x-1 px-3 text-xs font-medium"
+            title="Expand Fullscreen"
           >
-            <Maximize2 class="w-4 h-4" />
+            <Maximize2 class="w-3.5 h-3.5" />
+            <span class="hidden sm:inline">Fullscreen</span>
           </button>
         </div>
 
@@ -363,50 +450,101 @@ function handleAddToCart() {
       </div>
     </div>
 
-    <!-- Image Fullscreen Modal -->
+    <!-- Image Fullscreen Modal with Interactive Zoom & Drag Pan -->
     <Teleport to="body">
       <div
         v-if="isZoomOpen"
-        class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center"
+        class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center select-none overflow-hidden"
         @click.self="isZoomOpen = false"
+        @mousemove="handleModalMouseMove"
+        @mouseup="handleModalMouseUp"
       >
-        <button
-          @click="isZoomOpen = false"
-          class="absolute top-4 right-4 z-10 text-white/80 hover:text-white p-2 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer"
-          title="Close"
-        >
-          <X class="w-6 h-6" />
-        </button>
+        <!-- Modal Toolbar Controls -->
+        <div class="absolute top-4 right-4 z-20 flex items-center space-x-2">
+          <!-- Zoom Out Button -->
+          <button
+            @click="modalZoomScale = Math.max(1, modalZoomScale - 0.5)"
+            class="text-white/80 hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer disabled:opacity-40"
+            :disabled="modalZoomScale <= 1"
+            title="Zoom Out (-)"
+          >
+            <ZoomOut class="w-5 h-5" />
+          </button>
 
+          <!-- Zoom Toggle / Scale Indicator -->
+          <button
+            @click="toggleModalZoom"
+            class="text-white text-xs font-semibold px-3 py-2 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer border border-white/20"
+            title="Toggle 2.2x Zoom"
+          >
+            {{ Math.round(modalZoomScale * 100) }}%
+          </button>
+
+          <!-- Zoom In Button -->
+          <button
+            @click="modalZoomScale = Math.min(4, modalZoomScale + 0.5)"
+            class="text-white/80 hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer disabled:opacity-40"
+            :disabled="modalZoomScale >= 4"
+            title="Zoom In (+)"
+          >
+            <ZoomIn class="w-5 h-5" />
+          </button>
+
+          <!-- Close Modal Button -->
+          <button
+            @click="isZoomOpen = false"
+            class="text-white/80 hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer ml-2"
+            title="Close (Esc)"
+          >
+            <X class="w-6 h-6" />
+          </button>
+        </div>
+
+        <!-- Left / Right Carousel Controls -->
         <button
           v-if="productImages.length > 1"
           @click="prevImage"
-          class="absolute left-2 sm:left-5 top-1/2 -translate-y-1/2 z-10 text-white/80 hover:text-white p-2 sm:p-3.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer"
-          title="Previous Image"
+          class="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 text-white/80 hover:text-white p-2.5 sm:p-3.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer"
+          title="Previous Image (Left Arrow)"
         >
           <ChevronLeft class="w-6 h-6 sm:w-8 sm:h-8" />
         </button>
 
-        <img
-          :src="currentImageUrl"
-          :alt="product.name"
-          class="w-auto h-auto max-w-[92vw] sm:max-w-[85vw] max-h-[86vh] sm:max-h-[90vh] object-contain rounded-lg shadow-2xl"
-        />
-
         <button
           v-if="productImages.length > 1"
           @click="nextImage"
-          class="absolute right-2 sm:right-5 top-1/2 -translate-y-1/2 z-10 text-white/80 hover:text-white p-2 sm:p-3.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer"
-          title="Next Image"
+          class="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 text-white/80 hover:text-white p-2.5 sm:p-3.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer"
+          title="Next Image (Right Arrow)"
         >
           <ChevronRight class="w-6 h-6 sm:w-8 sm:h-8" />
         </button>
 
+        <!-- Main Zoomable & Draggable Image Frame -->
         <div
-          v-if="productImages.length > 1"
-          class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/85 text-xs sm:text-sm bg-white/10 backdrop-blur-sm px-3.5 py-1.5 rounded-full"
+          class="relative max-w-[92vw] sm:max-w-[85vw] max-h-[86vh] sm:max-h-[90vh] overflow-hidden flex items-center justify-center transition-all duration-200"
+          :class="[
+            modalZoomScale > 1 ? (isModalPanning ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-zoom-in'
+          ]"
+          @mousedown="handleModalMouseDown"
+          @click="modalZoomScale === 1 ? toggleModalZoom() : null"
         >
-          {{ activeImageIndex + 1 }} / {{ productImages.length }}
+          <img
+            :src="currentImageUrl"
+            :alt="product.name"
+            class="w-auto h-auto max-w-[92vw] sm:max-w-[85vw] max-h-[86vh] sm:max-h-[90vh] object-contain rounded-lg shadow-2xl transition-transform duration-150 ease-out pointer-events-none"
+            :style="{
+              transform: `translate(${modalPanPos.x}px, ${modalPanPos.y}px) scale(${modalZoomScale})`
+            }"
+          />
+        </div>
+
+        <!-- Bottom Footer Info Bar -->
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center space-x-3 text-white/85 text-xs sm:text-sm bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/15">
+          <span v-if="productImages.length > 1" class="font-medium">
+            {{ activeImageIndex + 1 }} / {{ productImages.length }}
+          </span>
+          <span v-if="productImages.length > 1" class="text-white/40">•</span>
+          <span class="text-white/70 hidden sm:inline">Use +/- keys or click to zoom • Drag to pan</span>
         </div>
       </div>
     </Teleport>
