@@ -27,7 +27,7 @@ const activeImageIndex = ref(0)
 const isZoomOpen = ref(false)
 const isAdded = ref(false)
 
-// Interactive Image Zoom State
+// Interactive Image Zoom State (Gentle & balanced)
 const isHoveringZoom = ref(false)
 const zoomPos = ref({ x: 50, y: 50 })
 const modalZoomScale = ref(1)
@@ -39,8 +39,11 @@ function handleMouseMove(e: MouseEvent) {
   const target = e.currentTarget as HTMLElement
   if (!target) return
   const rect = target.getBoundingClientRect()
-  const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100))
-  const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100))
+  // Subtle clamped mapping (between 20% and 80%) so zoom doesn't whip sharply at the outer edges
+  const rawX = ((e.clientX - rect.left) / rect.width) * 100
+  const rawY = ((e.clientY - rect.top) / rect.height) * 100
+  const x = Math.max(20, Math.min(80, rawX))
+  const y = Math.max(20, Math.min(80, rawY))
   zoomPos.value = { x, y }
 }
 
@@ -50,11 +53,12 @@ function handleMouseEnter() {
 
 function handleMouseLeave() {
   isHoveringZoom.value = false
+  zoomPos.value = { x: 50, y: 50 }
 }
 
 function toggleModalZoom() {
-  if (modalZoomScale.value === 1) {
-    modalZoomScale.value = 2.2
+  if (modalZoomScale.value <= 1) {
+    modalZoomScale.value = 1.6
   } else {
     modalZoomScale.value = 1
     modalPanPos.value = { x: 0, y: 0 }
@@ -72,9 +76,12 @@ function handleModalMouseDown(e: MouseEvent) {
 
 function handleModalMouseMove(e: MouseEvent) {
   if (!isModalPanning.value || modalZoomScale.value <= 1) return
+  const maxPan = 180 * (modalZoomScale.value - 1)
+  const newX = e.clientX - modalDragStart.value.x
+  const newY = e.clientY - modalDragStart.value.y
   modalPanPos.value = {
-    x: e.clientX - modalDragStart.value.x,
-    y: e.clientY - modalDragStart.value.y
+    x: Math.max(-maxPan, Math.min(maxPan, newX)),
+    y: Math.max(-maxPan, Math.min(maxPan, newY))
   }
 }
 
@@ -120,8 +127,8 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') isZoomOpen.value = false
   if (e.key === 'ArrowRight') nextImage()
   if (e.key === 'ArrowLeft') prevImage()
-  if (e.key === '+' || e.key === '=') modalZoomScale.value = Math.min(4, modalZoomScale.value + 0.5)
-  if (e.key === '-') modalZoomScale.value = Math.max(1, modalZoomScale.value - 0.5)
+  if (e.key === '+' || e.key === '=') modalZoomScale.value = Math.min(2.5, +(modalZoomScale.value + 0.25).toFixed(2))
+  if (e.key === '-') modalZoomScale.value = Math.max(1, +(modalZoomScale.value - 0.25).toFixed(2))
 }
 
 watch(isZoomOpen, (open) => {
@@ -203,10 +210,10 @@ function handleAddToCart() {
           <img
             :src="currentImageUrl"
             :alt="product.name"
-            class="w-full h-full object-contain select-none transition-transform duration-150 ease-out"
+            class="w-full h-full object-contain select-none transition-transform duration-300 ease-out"
             :style="isHoveringZoom ? {
               transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-              transform: 'scale(2.4)'
+              transform: 'scale(1.35)'
             } : {
               transform: 'scale(1)'
             }"
@@ -463,7 +470,7 @@ function handleAddToCart() {
         <div class="absolute top-4 right-4 z-20 flex items-center space-x-2">
           <!-- Zoom Out Button -->
           <button
-            @click="modalZoomScale = Math.max(1, modalZoomScale - 0.5)"
+            @click="modalZoomScale = Math.max(1, +(modalZoomScale - 0.25).toFixed(2))"
             class="text-white/80 hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer disabled:opacity-40"
             :disabled="modalZoomScale <= 1"
             title="Zoom Out (-)"
@@ -475,16 +482,16 @@ function handleAddToCart() {
           <button
             @click="toggleModalZoom"
             class="text-white text-xs font-semibold px-3 py-2 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer border border-white/20"
-            title="Toggle 2.2x Zoom"
+            title="Toggle 1.6x Zoom"
           >
             {{ Math.round(modalZoomScale * 100) }}%
           </button>
 
           <!-- Zoom In Button -->
           <button
-            @click="modalZoomScale = Math.min(4, modalZoomScale + 0.5)"
+            @click="modalZoomScale = Math.min(2.5, +(modalZoomScale + 0.25).toFixed(2))"
             class="text-white/80 hover:text-white p-2.5 rounded-full bg-white/10 hover:bg-white/25 transition-all cursor-pointer disabled:opacity-40"
-            :disabled="modalZoomScale >= 4"
+            :disabled="modalZoomScale >= 2.5"
             title="Zoom In (+)"
           >
             <ZoomIn class="w-5 h-5" />
