@@ -228,7 +228,7 @@ function handleAddToCart() {
 
         <!-- Delivery Status -->
         <div class="text-sm text-neutral-800 font-medium mb-6">
-          Delivery 3 - 5 Days
+          Delivery 7-14 Days
         </div>
 
         <!-- Quantity & Stock Display -->
